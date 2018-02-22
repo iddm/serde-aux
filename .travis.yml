@@ -1,0 +1,21 @@
+language: rust
+matrix:
+    fast_finish: true
+    include:
+        - rust: nightly
+        - rust: beta
+        - rust: stable
+
+sudo: false
+
+cache:
+    apt: true
+    directories:
+        - $TRAVIS_BUILD_DIR/target
+        - $HOME/.cargo
+
+script:
+  - cargo test --verbose $FEATURES -- --nocapture
+      
+notifications:
+email: false
