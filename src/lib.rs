@@ -98,7 +98,7 @@ where
 /// use std::str::FromStr;
 /// use std::num::{ParseIntError, ParseFloatError};
 ///
-/// #[derive(Serialize, Deserialize, Debug)]
+/// #[derive(Serialize, Deserialize, Debug, PartialEq)]
 /// struct IntId(u64);
 ///
 /// impl FromStr for IntId {
@@ -108,11 +108,23 @@ where
 ///         Ok(IntId(u64::from_str(s)?))
 ///     }
 /// }
+///
+/// #[derive(Serialize, Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "serde_aux::deserialize_number_from_string")]
+///     int_id: IntId,
+/// }
 /// fn main() {
+///     let s = r#"{ "int_id": "123" }"#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert_eq!(a.int_id.0, 123);
+///
+///     let s = r#"{ "int_id": 444 }"#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert_eq!(a.int_id.0, 444);
 ///
 /// }
 /// ```
-
 
 pub fn deserialize_number_from_string<'de, T, D>(deserializer: D) -> Result<T, D::Error>
 where
@@ -130,5 +142,134 @@ where
     match StringOrInt::<T>::deserialize(deserializer)? {
         StringOrInt::String(s) => s.parse::<T>().map_err(serde::de::Error::custom),
         StringOrInt::Number(i) => Ok(i),
+    }
+}
+
+/// Deserializes boolean from a anything (string, number, boolean). If input is a string,
+/// it is expected, that it is possible to convert it to a number. The return boolean is
+/// true if the number was `1` or `1.0` after parsing.
+///
+/// # Example
+///
+/// ```rust
+/// #[macro_use]
+/// extern crate serde_derive;
+/// extern crate serde_json;
+/// extern crate serde_aux;
+/// extern crate serde;
+///
+/// #[derive(Serialize, Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "serde_aux::deserialize_bool_from_anything")]
+///     boolean: bool,
+/// }
+/// fn main() {
+///     let s = r#"{ "boolean": 1.0 }"#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert!(a.boolean);
+///
+///     let s = r#"{ "boolean": 0.0 }"#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert!(!a.boolean);
+///
+///     let s = r#"{ "boolean": 2.3 }"#;
+///     assert!(serde_json::from_str::<MyStruct>(s).is_err());
+///
+///     let s = r#"{ "boolean": 1 }"#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert!(a.boolean);
+///
+///     let s = r#"{ "boolean": 0 }"#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert!(!a.boolean);
+///
+///     let s = r#"{ "boolean": 2 }"#;
+///     assert!(serde_json::from_str::<MyStruct>(s).is_err());
+///
+///     let s = r#"{ "boolean": "1.0" }"#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert!(a.boolean);
+///
+///     let s = r#"{ "boolean": "0.0" }"#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert!(!a.boolean);
+///
+///     let s = r#"{ "boolean": "2.3" }"#;
+///     assert!(serde_json::from_str::<MyStruct>(s).is_err());
+///
+///     let s = r#"{ "boolean": "1" }"#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert!(a.boolean);
+///
+///     let s = r#"{ "boolean": "0" }"#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert!(!a.boolean);
+///
+///     let s = r#"{ "boolean": "2" }"#;
+///     assert!(serde_json::from_str::<MyStruct>(s).is_err());
+///
+///     let s = r#"{ "boolean": "foo" }"#;
+///     assert!(serde_json::from_str::<MyStruct>(s).is_err());
+/// }
+/// ```
+pub fn deserialize_bool_from_anything<'de, D>(deserializer: D) -> Result<bool, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use std::f64::EPSILON;
+
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum AnythingOrBool {
+        String(String),
+        Int(i64),
+        Float(f64),
+        Boolean(bool),
+    }
+
+    match AnythingOrBool::deserialize(deserializer)? {
+        AnythingOrBool::Boolean(b) => Ok(b),
+        AnythingOrBool::Int(i) => match i {
+            1 => Ok(true),
+            0 => Ok(false),
+            _ => Err(serde::de::Error::custom("The number is neither 1 nor 0")),
+        },
+        AnythingOrBool::Float(f) => {
+            if (f - 1.0f64).abs() < EPSILON {
+                Ok(true)
+            } else if f == 0.0f64 {
+                Ok(false)
+            } else {
+                Err(serde::de::Error::custom(
+                    "The number is neither 1.0 nor 0.0",
+                ))
+            }
+        }
+        AnythingOrBool::String(string) => {
+            if let Ok(b) = string.parse::<bool>() {
+                Ok(b)
+            } else if let Ok(i) = string.parse::<i64>() {
+                match i {
+                    1 => Ok(true),
+                    0 => Ok(false),
+                    _ => Err(serde::de::Error::custom("The number is neither 1 nor 0")),
+                }
+            } else if let Ok(f) = string.parse::<f64>() {
+                if (f - 1.0f64).abs() < EPSILON {
+                    Ok(true)
+                } else if f == 0.0f64 {
+                    Ok(false)
+                } else {
+                    Err(serde::de::Error::custom(
+                        "The number is neither 1.0 nor 0.0",
+                    ))
+                }
+            } else {
+                Err(serde::de::Error::custom(format!(
+                    "Could not parse boolean from a string: {}",
+                    string
+                )))
+            }
+        }
     }
 }

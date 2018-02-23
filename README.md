@@ -5,6 +5,8 @@
 An auxiliary library for the [`serde`](https://github.com/serde-rs/serde) crate.
 
 Contains some useful helper deserialize implementations. See [docs](https://docs.rs/serde-aux) for more info.
+The library is free for any contributions. The goal of this crate is to improve the user experience of the **serde**
+crate.
 
 ## License
 
