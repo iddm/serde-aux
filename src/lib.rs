@@ -5,6 +5,8 @@
 #![deny(missing_docs)]
 #![deny(warnings)]
 
+#[cfg(feature = "chrono")]
+extern crate chrono;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -13,6 +15,55 @@ extern crate serde_json;
 use std::str::FromStr;
 
 use serde::{Deserialize, Deserializer};
+
+/// Deserializes a chrono::DateTime<Utc> from a milliseconds time stamp. Useful when the data is coming from a number
+/// which is not a seconds time stamp but milliseconds one. It also handles the string to number conversion if the
+/// data was passed as a string with number inside like "1519927261900".
+///
+/// # Example:
+///
+/// ```rust
+/// #[macro_use]
+/// extern crate serde_derive;
+/// extern crate serde_json;
+/// extern crate serde_aux;
+/// extern crate serde;
+/// extern crate chrono;
+///
+/// use chrono::prelude::*;
+///
+/// #[derive(Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "serde_aux::deserialize_datetime_utc_from_milliseconds")]
+///     time: DateTime<Utc>,
+/// }
+/// fn main() {
+///     // Note, the the current implementation does not check if it the original was not a number.
+///     let s = r#" { "time": "1519927261900" } "#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert_eq!(a.time.timestamp(), 1519927261);
+///     assert_eq!(a.time.timestamp_subsec_millis(), 900);
+/// }
+/// ```
+#[cfg(feature = "chrono")]
+pub fn deserialize_datetime_utc_from_milliseconds<'de, D>(
+    deserializer: D,
+) -> Result<chrono::DateTime<chrono::Utc>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use chrono::prelude::*;
+
+    let number = deserialize_number_from_string::<i64, D>(deserializer)?;
+    let seconds = number / 1000;
+    let millis = (number % 1000) as u32;
+    let nanos = millis * 1_000_000;
+
+    Ok(DateTime::<Utc>::from_utc(
+        NaiveDateTime::from_timestamp(seconds, nanos),
+        Utc,
+    ))
+}
 
 /// Deserializes string from a number. If the original value is a number value, it will be converted to a string.
 ///
