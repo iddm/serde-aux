@@ -7,7 +7,7 @@ use std::fmt::Display;
 
 use serde::{Deserialize, Deserializer};
 
-/// Deserializes a chrono::DateTime<Utc> from a milliseconds time stamp. Useful when the data is coming from a number
+/// Deserializes a `chrono::DateTime<Utc>` from a milliseconds time stamp. Useful when the data is coming from a number
 /// which is not a seconds time stamp but milliseconds one. It also handles the string to number conversion if the
 /// data was passed as a string with number inside like "1519927261900".
 ///
@@ -280,7 +280,8 @@ where
     }
 }
 
-/// Deserializes string from a number. If the original value is a number value, it will be converted to a string.
+/// Deserializes string from a number. If the original value is a number value,
+/// it will be converted to a string.
 ///
 /// # Example:
 ///
