@@ -30,7 +30,6 @@ use serde::{Deserialize, Deserializer};
 ///     time: DateTime<Utc>,
 /// }
 /// fn main() {
-///     // Note, the the current implementation does not check if it the original was not a number.
 ///     let s = r#" { "time": "1519927261900" } "#;
 ///     let a: MyStruct = serde_json::from_str(s).unwrap();
 ///     assert_eq!(a.time.timestamp(), 1519927261);
@@ -300,7 +299,6 @@ where
 ///     number_as_string: String,
 /// }
 /// fn main() {
-///     // Note, the the current implementation does not check if it the original was not a number.
 ///     let s = r#" { "number_as_string": "foo" } "#;
 ///     let a: MyStruct = serde_json::from_str(s).unwrap();
 ///     assert_eq!(a.number_as_string, "foo");
