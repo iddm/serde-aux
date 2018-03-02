@@ -47,9 +47,9 @@ where
     T::deserialize(Value::Object(lower)).map_err(Error::custom)
 }
 
-/// This contains both serialization and deserialization a enum into/from numbers.
-/// The [reference implementation] does not work if your enum has negative values.
-/// This `enum_number` handles this also.
+/// This contains both serialization and ser/deserialization of a enum into and from numbers.
+/// The [reference implementation](https://serde.rs/enum-number.html) does not work if your
+/// enum has negative values. This `enum_number` handles this also.
 ///
 /// # Example
 ///

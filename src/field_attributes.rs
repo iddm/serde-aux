@@ -9,7 +9,7 @@ use serde::{Deserialize, Deserializer};
 
 /// Deserializes a `chrono::DateTime<Utc>` from a milliseconds time stamp. Useful when the data is coming from a number
 /// which is not a seconds time stamp but milliseconds one. It also handles the string to number conversion if the
-/// data was passed as a string with number inside like "1519927261900".
+/// data was passed as a string with number inside like **"1519927261900"**.
 ///
 /// # Example:
 ///
@@ -75,7 +75,6 @@ where
 ///     number_from_string: u64,
 /// }
 /// fn main() {
-///     // Note, the the current implementation does not check if it the original was not a number.
 ///     let s = r#" { "number_from_string": "123" } "#;
 ///     let a: MyStruct = serde_json::from_str(s).unwrap();
 ///     assert_eq!(a.number_from_string, 123);
@@ -148,9 +147,9 @@ where
     }
 }
 
-/// Deserializes boolean from a anything (string, number, boolean). If input is a string,
+/// Deserializes boolean from anything (string, number, boolean). If input is a string,
 /// it is expected, that it is possible to convert it to a number. The return boolean is
-/// true if the number was `1` or `1.0` after parsing.
+/// `true` if the number was either `1` or `1.0` after parsing.
 ///
 /// # Example
 ///
