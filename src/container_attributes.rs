@@ -47,52 +47,6 @@ where
     T::deserialize(Value::Object(lower)).map_err(Error::custom)
 }
 
-/// Deserializes string from a number. If the original value is a number value, it will be converted to a string.
-///
-/// # Example:
-///
-/// ```rust
-/// #[macro_use]
-/// extern crate serde_derive;
-/// extern crate serde_json;
-/// extern crate serde_aux;
-/// extern crate serde;
-///
-/// use serde_aux::prelude::*;
-///
-/// #[derive(Serialize, Deserialize, Debug)]
-/// struct MyStruct {
-///     #[serde(deserialize_with = "deserialize_string_from_number")]
-///     number_as_string: String,
-/// }
-/// fn main() {
-///     // Note, the the current implementation does not check if it the original was not a number.
-///     let s = r#" { "number_as_string": "foo" } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(a.number_as_string, "foo");
-///
-///     let s = r#" { "number_as_string": -13 } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(a.number_as_string, "-13");
-/// }
-/// ```
-pub fn deserialize_string_from_number<'de, D>(deserializer: D) -> Result<String, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    #[derive(Deserialize)]
-    #[serde(untagged)]
-    enum StringOrInt {
-        String(String),
-        Number(i64),
-    }
-
-    match StringOrInt::deserialize(deserializer)? {
-        StringOrInt::String(s) => Ok(s),
-        StringOrInt::Number(i) => Ok(i.to_string()),
-    }
-}
-
 /// This contains both serialization and deserialization a enum into/from numbers.
 /// The [reference implementation] does not work if your enum has negative values.
 /// This `enum_number` handles this also.
