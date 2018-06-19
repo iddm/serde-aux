@@ -5,17 +5,17 @@ matrix:
         - rust: nightly
         - rust: beta
         - rust: stable
+        - rust: 1.26.2
 
 sudo: false
 
 cache:
-    apt: true
     directories:
         - $TRAVIS_BUILD_DIR/target
         - $HOME/.cargo
 
 script:
   - cargo test --verbose $FEATURES -- --nocapture
-      
+
 notifications:
-email: false
+    email: false
