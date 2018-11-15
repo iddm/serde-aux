@@ -323,3 +323,13 @@ where
         StringOrInt::Number(i) => Ok(i.to_string()),
     }
 }
+
+/// Deserializes default value from nullable value. If the original value is `null`,
+/// `Default::default()` is used.
+pub fn deserialize_default_from_null<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de> + Default,
+{
+    Ok(Deserialize::deserialize(deserializer).unwrap_or_default())
+}
