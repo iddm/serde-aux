@@ -326,6 +326,34 @@ where
 
 /// Deserializes default value from nullable value. If the original value is `null`,
 /// `Default::default()` is used.
+///
+/// # Example:
+///
+/// ```rust
+/// #[macro_use]
+/// extern crate serde_derive;
+/// extern crate serde_json;
+/// extern crate serde_aux;
+/// extern crate serde;
+///
+/// use serde_aux::prelude::*;
+///
+/// #[derive(Serialize, Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "deserialize_default_from_null")]
+///     null_as_default: u64,
+/// }
+///
+/// fn main() {
+///     let s = r#" { "null_as_default": 42 } "#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert_eq!(a.null_as_default, 42);
+///
+///     let s = r#" { "null_as_default": null } "#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert_eq!(a.null_as_default, 0);
+/// }
+/// ```
 pub fn deserialize_default_from_null<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     D: Deserializer<'de>,
