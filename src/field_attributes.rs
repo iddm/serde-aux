@@ -352,6 +352,9 @@ where
 ///     let s = r#" { "null_as_default": null } "#;
 ///     let a: MyStruct = serde_json::from_str(s).unwrap();
 ///     assert_eq!(a.null_as_default, 0);
+///
+///     let s = r#" { "null_as_default": "wrong_type" } "#;
+///     assert!(serde_json::from_str::<MyStruct>(s).is_err());
 /// }
 /// ```
 pub fn deserialize_default_from_null<'de, D, T>(deserializer: D) -> Result<T, D::Error>
@@ -359,7 +362,7 @@ where
     D: Deserializer<'de>,
     T: Deserialize<'de> + Default,
 {
-    Ok(Deserialize::deserialize(deserializer).unwrap_or_default())
+    Ok(Option::deserialize(deserializer)?.unwrap_or_default())
 }
 
 /// Deserializes default value from nullable value or empty object. If the original value is `null` or `{}`,
