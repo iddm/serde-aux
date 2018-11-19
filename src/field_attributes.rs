@@ -352,6 +352,9 @@ where
 ///     let s = r#" { "null_as_default": null } "#;
 ///     let a: MyStruct = serde_json::from_str(s).unwrap();
 ///     assert_eq!(a.null_as_default, 0);
+///
+///     let s = r#" { "null_as_default": "wrong_type" } "#;
+///     assert!(serde_json::from_str::<MyStruct>(s).is_err());
 /// }
 /// ```
 pub fn deserialize_default_from_null<'de, D, T>(deserializer: D) -> Result<T, D::Error>
@@ -359,5 +362,71 @@ where
     D: Deserializer<'de>,
     T: Deserialize<'de> + Default,
 {
-    Ok(Deserialize::deserialize(deserializer).unwrap_or_default())
+    Ok(Option::deserialize(deserializer)?.unwrap_or_default())
+}
+
+/// Deserializes default value from nullable value or empty object. If the original value is `null` or `{}`,
+/// `Default::default()` is used.
+///
+/// # Example:
+///
+/// ```rust
+/// #[macro_use]
+/// extern crate serde_derive;
+/// extern crate serde_json;
+/// extern crate serde_aux;
+/// extern crate serde;
+///
+/// use serde_aux::prelude::*;
+///
+/// #[derive(Serialize, Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "deserialize_default_from_empty_object")]
+///     empty_as_default: Option<MyInnerStruct>,
+/// }
+///
+/// #[derive(Serialize, Deserialize, Debug)]
+/// struct MyInnerStruct {
+///     mandatory: u64,
+/// }
+///
+/// fn main() {
+///     let s = r#" { "empty_as_default": { "mandatory": 42 } } "#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert_eq!(a.empty_as_default.unwrap().mandatory, 42);
+///
+///     let s = r#" { "empty_as_default": null } "#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert!(a.empty_as_default.is_none());
+///
+///     let s = r#" { "empty_as_default": {} } "#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert!(a.empty_as_default.is_none());
+///
+///     let s = r#" { "empty_as_default": { "unknown": 42 } } "#;
+///     assert!(serde_json::from_str::<MyStruct>(s).is_err());
+/// }
+/// ```
+pub fn deserialize_default_from_empty_object<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de> + Default,
+{
+    #[derive(Debug, Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct EmptyObject { }
+
+    #[derive(Debug, Deserialize)]
+    #[serde(untagged)]
+    enum EmptyOrNot<Y> {
+        NonEmpty(Y),
+        Empty(EmptyObject),
+    }
+
+    let empty_or_not: EmptyOrNot<T> = EmptyOrNot::deserialize(deserializer)?;
+
+    match empty_or_not {
+        EmptyOrNot::NonEmpty(e) => Ok(e),
+        _ => Ok(T::default()),
+    }
 }
