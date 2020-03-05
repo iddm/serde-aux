@@ -1,25 +1,18 @@
-use serde::{Deserialize, Deserializer};
 use serde::de::{DeserializeOwned, Error};
+use serde::{Deserialize, Deserializer};
 
 /// Deserializes a struct without checking for the fields case sensititivity.
 ///
 /// # Example:
 ///
 /// ```rust
-/// #[macro_use]
-/// extern crate serde_derive;
-/// extern crate serde_json;
-/// extern crate serde_aux;
-/// extern crate serde;
-/// extern crate chrono;
-///
 /// use serde_aux::prelude::*;
 ///
-/// #[derive(Deserialize, Debug)]
+/// #[derive(serde::Deserialize, Debug)]
 /// struct AnotherStruct {
 ///     aaa: String,
 /// }
-/// #[derive(Deserialize, Debug)]
+/// #[derive(serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "deserialize_struct_case_insensitive")]
 ///     another_struct: AnotherStruct,
@@ -41,7 +34,8 @@ where
     use std::collections::BTreeMap as Map;
 
     let map = Map::<String, Value>::deserialize(deserializer)?;
-    let lower = map.into_iter()
+    let lower = map
+        .into_iter()
         .map(|(k, v)| (k.to_lowercase(), v))
         .collect();
     T::deserialize(Value::Object(lower)).map_err(Error::custom)
@@ -54,14 +48,7 @@ where
 /// # Example
 ///
 /// ```rust
-/// #[macro_use]
-/// extern crate serde_derive;
-/// #[macro_use]
-/// extern crate serde_aux;
-/// extern crate serde_json;
-/// extern crate serde;
-///
-/// serde_aux_enum_number_declare!(TestEnum {
+/// serde_aux::enum_number_declare!(TestEnum {
 ///     Up = 1,
 ///     None = 0,
 ///     Down = -1,
@@ -85,7 +72,7 @@ where
 /// }
 /// ```
 #[macro_export]
-macro_rules! serde_aux_enum_number_declare {
+macro_rules! enum_number_declare {
     ($name:ident { $($variant:ident = $value:expr, )* }) => {
         #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
         pub enum $name {

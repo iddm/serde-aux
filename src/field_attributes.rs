@@ -1,9 +1,5 @@
-#[cfg(feature = "chrono")]
-use chrono;
-use serde;
-
-use std::str::FromStr;
 use std::fmt::Display;
+use std::str::FromStr;
 
 use serde::{Deserialize, Deserializer};
 
@@ -14,17 +10,10 @@ use serde::{Deserialize, Deserializer};
 /// # Example:
 ///
 /// ```rust
-/// #[macro_use]
-/// extern crate serde_derive;
-/// extern crate serde_json;
-/// extern crate serde_aux;
-/// extern crate serde;
-/// extern crate chrono;
-///
 /// use chrono::prelude::*;
 /// use serde_aux::prelude::*;
 ///
-/// #[derive(Deserialize, Debug)]
+/// #[derive(serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "deserialize_datetime_utc_from_milliseconds")]
 ///     time: DateTime<Utc>,
@@ -61,15 +50,9 @@ where
 /// # Example:
 ///
 /// ```rust
-/// #[macro_use]
-/// extern crate serde_derive;
-/// extern crate serde_json;
-/// extern crate serde_aux;
-/// extern crate serde;
-///
 /// use serde_aux::prelude::*;
 ///
-/// #[derive(Serialize, Deserialize, Debug)]
+/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "deserialize_number_from_string")]
 ///     number_from_string: u64,
@@ -90,18 +73,12 @@ where
 /// # Example
 ///
 /// ```rust
-/// #[macro_use]
-/// extern crate serde_derive;
-/// extern crate serde_json;
-/// extern crate serde_aux;
-/// extern crate serde;
-///
 /// use std::str::FromStr;
 /// use std::num::{ParseIntError, ParseFloatError};
 ///
 /// use serde_aux::prelude::*;
 ///
-/// #[derive(Serialize, Deserialize, Debug, PartialEq)]
+/// #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
 /// struct IntId(u64);
 ///
 /// impl FromStr for IntId {
@@ -112,7 +89,7 @@ where
 ///     }
 /// }
 ///
-/// #[derive(Serialize, Deserialize, Debug)]
+/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "deserialize_number_from_string")]
 ///     int_id: IntId,
@@ -154,15 +131,9 @@ where
 /// # Example
 ///
 /// ```rust
-/// #[macro_use]
-/// extern crate serde_derive;
-/// extern crate serde_json;
-/// extern crate serde_aux;
-/// extern crate serde;
-///
 /// use serde_aux::prelude::*;
 ///
-/// #[derive(Serialize, Deserialize, Debug)]
+/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "deserialize_bool_from_anything")]
 ///     boolean: bool,
@@ -284,15 +255,9 @@ where
 /// # Example:
 ///
 /// ```rust
-/// #[macro_use]
-/// extern crate serde_derive;
-/// extern crate serde_json;
-/// extern crate serde_aux;
-/// extern crate serde;
-///
 /// use serde_aux::prelude::*;
 ///
-/// #[derive(Serialize, Deserialize, Debug)]
+/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "deserialize_string_from_number")]
 ///     number_as_string: String,
@@ -330,15 +295,9 @@ where
 /// # Example:
 ///
 /// ```rust
-/// #[macro_use]
-/// extern crate serde_derive;
-/// extern crate serde_json;
-/// extern crate serde_aux;
-/// extern crate serde;
-///
 /// use serde_aux::prelude::*;
 ///
-/// #[derive(Serialize, Deserialize, Debug)]
+/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "deserialize_default_from_null")]
 ///     null_as_default: u64,
@@ -371,21 +330,15 @@ where
 /// # Example:
 ///
 /// ```rust
-/// #[macro_use]
-/// extern crate serde_derive;
-/// extern crate serde_json;
-/// extern crate serde_aux;
-/// extern crate serde;
-///
 /// use serde_aux::prelude::*;
 ///
-/// #[derive(Serialize, Deserialize, Debug)]
+/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "deserialize_default_from_empty_object")]
 ///     empty_as_default: Option<MyInnerStruct>,
 /// }
 ///
-/// #[derive(Serialize, Deserialize, Debug)]
+/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
 /// struct MyInnerStruct {
 ///     mandatory: u64,
 /// }
@@ -414,7 +367,7 @@ where
 {
     #[derive(Debug, Deserialize)]
     #[serde(deny_unknown_fields)]
-    struct EmptyObject { }
+    struct EmptyObject {}
 
     #[derive(Debug, Deserialize)]
     #[serde(untagged)]
