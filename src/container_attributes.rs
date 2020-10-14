@@ -3,6 +3,12 @@ use serde::{Deserialize, Deserializer};
 
 /// Deserializes a struct without checking for the fields case sensititivity.
 ///
+/// # **Notes**
+///
+/// - The following deserialiser is incompatible with serde's one. If you wish
+/// to use `serde(rename)`, there is a high risk it won't work. Please see
+/// https://github.com/vityafx/serde-aux/issues/8 for further information.
+///
 /// # Example:
 ///
 /// ```rust
