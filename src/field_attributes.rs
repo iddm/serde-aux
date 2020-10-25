@@ -270,6 +270,10 @@ where
 ///     let s = r#" { "number_as_string": -13 } "#;
 ///     let a: MyStruct = serde_json::from_str(s).unwrap();
 ///     assert_eq!(a.number_as_string, "-13");
+///
+///     let s = r#" { "number_as_string": 24.0034 } "#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert_eq!(a.number_as_string, "24.0034");
 /// }
 /// ```
 pub fn deserialize_string_from_number<'de, D>(deserializer: D) -> Result<String, D::Error>
@@ -278,14 +282,16 @@ where
 {
     #[derive(Deserialize)]
     #[serde(untagged)]
-    enum StringOrInt {
+    enum StringOrNumber {
         String(String),
         Number(i64),
+        Float(f64),
     }
 
-    match StringOrInt::deserialize(deserializer)? {
-        StringOrInt::String(s) => Ok(s),
-        StringOrInt::Number(i) => Ok(i.to_string()),
+    match StringOrNumber::deserialize(deserializer)? {
+        StringOrNumber::String(s) => Ok(s),
+        StringOrNumber::Number(i) => Ok(i.to_string()),
+        StringOrNumber::Float(f) => Ok(f.to_string()),
     }
 }
 
