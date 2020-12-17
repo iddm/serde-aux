@@ -124,6 +124,92 @@ where
     }
 }
 
+/// Deserializes an option number from string or a number.
+///
+/// # Example:
+///
+/// ```rust
+/// use serde_aux::prelude::*;
+///
+/// #[derive(Debug, serde::Deserialize)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "deserialize_option_number_from_string")]
+///     option_num: Option<f32>,
+///     #[serde(default, deserialize_with = "deserialize_option_number_from_string")]
+///     missing: Option<i32>
+/// }
+/// fn serde_qs_eq(s: &str, result: Option<f32>) {
+///     let a: MyStruct = serde_qs::from_str(s).unwrap();
+///     assert_eq!(a.option_num, result);
+///     assert_eq!(a.missing, None);
+/// }
+/// fn serde_qs_err(s: &str) {
+///     assert!(serde_qs::from_str::<MyStruct>(s).is_err());
+/// }
+/// fn serde_json_eq(s: &str, result: Option<f32>) {
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert_eq!(a.option_num, result);
+///     assert_eq!(a.missing, None);
+/// }
+/// fn serde_json_err(s: &str) {
+///     assert!(serde_json::from_str::<MyStruct>(s).is_err());
+/// }
+/// fn main() {
+///     serde_qs_eq("option_num=1", Some(1.0));
+///     serde_qs_eq("option_num=-1", Some(-1.0));
+///     serde_qs_eq("option_num=0.1", Some(0.1));
+///     serde_qs_eq("option_num=-0.1", Some(-0.1));
+///     serde_qs_eq("option_num=", None);
+///     serde_qs_eq("option_num", None);
+///
+///     serde_qs_err("option_num=true");
+///     serde_qs_err("option_num=a");
+///     serde_qs_err("option_num[a]=");
+///     serde_qs_err("option_num[]=");
+///
+///     serde_json_eq(r#" { "option_num": "1" } "#, Some(1.0));
+///     serde_json_eq(r#" { "option_num": "-1" } "#, Some(-1.0));
+///     serde_json_eq(r#" { "option_num": "0.1" } "#, Some(0.1));
+///     serde_json_eq(r#" { "option_num": "-0.1" } "#, Some(-0.1));
+///     serde_json_eq(r#" { "option_num": 1 } "#, Some(1.0));
+///     serde_json_eq(r#" { "option_num": -1 } "#, Some(-1.0));
+///     serde_json_eq(r#" { "option_num": 0.1 } "#, Some(0.1));
+///     serde_json_eq(r#" { "option_num": -0.1 } "#, Some(-0.1));
+///     serde_json_eq(r#" { "option_num": "" } "#, None);
+///     serde_json_eq(r#" { "option_num": null } "#, None);
+///
+///     serde_json_err(r#" { "option_num": true } "#);
+///     serde_json_err(r#" { "option_num": "a" } "#);
+///     serde_json_err(r#" { "option_num": {} } "#);
+///     serde_json_err(r#" { "option_num": [] } "#);
+/// }
+/// ```
+pub fn deserialize_option_number_from_string<'de, T, D>(
+    deserializer: D,
+) -> Result<Option<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: FromStr + serde::Deserialize<'de>,
+    <T as FromStr>::Err: Display,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum NumericOrNull<'a, T> {
+        Str(&'a str),
+        FromStr(T),
+        Null,
+    }
+
+    match NumericOrNull::<T>::deserialize(deserializer)? {
+        NumericOrNull::Str(s) => match s {
+            "" => Ok(None),
+            _ => T::from_str(&s).map(Some).map_err(serde::de::Error::custom),
+        },
+        NumericOrNull::FromStr(i) => Ok(Some(i)),
+        NumericOrNull::Null => Ok(None),
+    }
+}
+
 /// Deserializes boolean from anything (string, number, boolean). If input is a string,
 /// it is expected, that it is possible to convert it to a number. The return boolean is
 /// `true` if the number was either `1` or `1.0` after parsing.
