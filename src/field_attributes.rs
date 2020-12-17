@@ -194,19 +194,19 @@ where
 {
     #[derive(Deserialize)]
     #[serde(untagged)]
-    enum NumbericOrNull<'a, T> {
+    enum NumericOrNull<'a, T> {
         Str(&'a str),
         FromStr(T),
         Null,
     }
 
-    match NumbericOrNull::<T>::deserialize(deserializer)? {
-        NumbericOrNull::Str(s) => match s {
+    match NumericOrNull::<T>::deserialize(deserializer)? {
+        NumericOrNull::Str(s) => match s {
             "" => Ok(None),
             _ => T::from_str(&s).map(Some).map_err(serde::de::Error::custom),
         },
-        NumbericOrNull::FromStr(i) => Ok(Some(i)),
-        NumbericOrNull::Null => Ok(None),
+        NumericOrNull::FromStr(i) => Ok(Some(i)),
+        NumericOrNull::Null => Ok(None),
     }
 }
 
