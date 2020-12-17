@@ -164,8 +164,8 @@ where
 ///
 ///     serde_qs_err("option_num=true");
 ///     serde_qs_err("option_num=a");
-///     serde_qs_err("option_num=[a]=");
-///     serde_qs_err("option_num=[]=");
+///     serde_qs_err("option_num[a]=");
+///     serde_qs_err("option_num[]=");
 ///
 ///     serde_json_eq(r#" { "option_num": "1" } "#, Some(1.0));
 ///     serde_json_eq(r#" { "option_num": "-1" } "#, Some(-1.0));
