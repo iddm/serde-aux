@@ -5,7 +5,7 @@ matrix:
         - rust: nightly
         - rust: beta
         - rust: stable
-        - rust: 1.32
+        - rust: 1.36
 
 sudo: false
 
