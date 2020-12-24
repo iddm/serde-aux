@@ -210,6 +210,258 @@ where
     }
 }
 
+macro_rules! wrap_option_number_from_string_fn {
+    (
+        $(#[doc = $doc:tt])*
+        $func:ident,
+        $res:ty
+    ) => {
+        $(#[doc = $doc])*
+        pub fn $func<'de, T, D>(deserializer: D) -> Result<$res, D::Error>
+        where
+            D: Deserializer<'de>,
+            T: FromStr + serde::Deserialize<'de>,
+            <T as FromStr>::Err: Display,
+        {
+            #[derive(Deserialize)]
+            #[serde(untagged)]
+            enum NumericOrNull<'a, T> {
+                Str(&'a str),
+                FromStr(T),
+                Null,
+            }
+
+            match NumericOrNull::<T>::deserialize(deserializer)? {
+                NumericOrNull::Str(s) => match s {
+                    "" => Ok(None.into()),
+                    _ => T::from_str(&s)
+                        .map(|i| Some(i).into())
+                        .map_err(serde::de::Error::custom),
+                },
+                NumericOrNull::FromStr(i) => Ok(Some(i).into()),
+                NumericOrNull::Null => Ok(None.into()),
+            }
+        }
+    };
+}
+wrap_option_number_from_string_fn!(
+    /// Deserializes a `Cell` option number from string or a number. Same logic as [`"deserialize_option_number_from_string"`](https://docs.rs/serde-aux/latest/serde_aux/field_attributes/fn.deserialize_option_number_from_string.html).
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use serde_aux::prelude::*;
+    /// use std::cell::Cell;
+    ///
+    /// #[derive(Debug, serde::Deserialize)]
+    /// struct MyStruct {
+    ///     #[serde(deserialize_with = "deserialize_cell_option_number_from_string")]
+    ///     v: Cell<Option<f32>>
+    /// }
+    /// fn main() {
+    ///     let a = serde_qs::from_str::<MyStruct>("v=-0.1").unwrap();
+    ///     assert_eq!(a.v, Cell::new(Some(-0.1)));
+    /// }
+    /// ```
+    deserialize_cell_option_number_from_string,
+    std::cell::Cell<Option<T>>
+);
+wrap_option_number_from_string_fn!(
+    /// Deserializes a `RefCell` option number from string or a number. Same logic as [`"deserialize_option_number_from_string"`](https://docs.rs/serde-aux/latest/serde_aux/field_attributes/fn.deserialize_option_number_from_string.html).
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use serde_aux::prelude::*;
+    /// use std::cell::RefCell;
+    ///
+    /// #[derive(Debug, serde::Deserialize)]
+    /// struct MyStruct {
+    ///     #[serde(default, deserialize_with = "deserialize_ref_cell_option_number_from_string")]
+    ///     v: RefCell<Option<f32>>
+    /// }
+    /// fn main() {
+    ///     let a = serde_qs::from_str::<MyStruct>("v=-0.1").unwrap();
+    ///     assert_eq!(a.v, RefCell::new(Some(-0.1)));
+    /// }
+    /// ```
+    deserialize_ref_cell_option_number_from_string,
+    std::cell::RefCell<Option<T>>
+);
+wrap_option_number_from_string_fn!(
+    /// Deserializes a `Mutex` option number from string or a number. Same logic as [`"deserialize_option_number_from_string"`](https://docs.rs/serde-aux/latest/serde_aux/field_attributes/fn.deserialize_option_number_from_string.html).
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use serde_aux::prelude::*;
+    /// use std::sync::Mutex;
+    ///
+    /// #[derive(Debug, serde::Deserialize)]
+    /// struct MyStruct {
+    ///     #[serde(default, deserialize_with = "deserialize_mutex_option_number_from_string")]
+    ///     v: Mutex<Option<f32>>
+    /// }
+    /// fn main() {
+    ///     let a = serde_qs::from_str::<MyStruct>("v=-0.1").unwrap();
+    ///     assert_eq!(*a.v.lock().unwrap(), Some(-0.1));
+    /// }
+    /// ```
+    deserialize_mutex_option_number_from_string,
+    std::sync::Mutex<Option<T>>
+);
+wrap_option_number_from_string_fn!(
+    /// Deserializes a `RwLock` option number from string or a number. Same logic as [`"deserialize_option_number_from_string"`](https://docs.rs/serde-aux/latest/serde_aux/field_attributes/fn.deserialize_option_number_from_string.html).
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use serde_aux::prelude::*;
+    /// use std::sync::RwLock;
+    ///
+    /// #[derive(Debug, serde::Deserialize)]
+    /// struct MyStruct {
+    ///     #[serde(default, deserialize_with = "deserialize_rw_lock_option_number_from_string")]
+    ///     v: RwLock<Option<f32>>
+    /// }
+    /// fn main() {
+    ///     let a = serde_qs::from_str::<MyStruct>("v=-0.1").unwrap();
+    ///     assert_eq!(*a.v.read().unwrap(), Some(-0.1));
+    /// }
+    /// ```
+    deserialize_rw_lock_option_number_from_string,
+    std::sync::RwLock<Option<T>>
+);
+
+#[cfg(test)]
+mod tests {
+    use crate::prelude::*;
+    use std::{
+        cell::{Cell, RefCell},
+        sync::{Mutex, RwLock},
+    };
+    #[derive(Debug, serde::Deserialize)]
+    struct MyStruct {
+        #[serde(
+            default,
+            deserialize_with = "deserialize_cell_option_number_from_string"
+        )]
+        cell: Cell<Option<f32>>,
+        #[serde(
+            default,
+            deserialize_with = "deserialize_ref_cell_option_number_from_string"
+        )]
+        ref_cell: RefCell<Option<f32>>,
+        #[serde(
+            default,
+            deserialize_with = "deserialize_mutex_option_number_from_string"
+        )]
+        mutex: Mutex<Option<f32>>,
+        #[serde(
+            default,
+            deserialize_with = "deserialize_rw_lock_option_number_from_string"
+        )]
+        rw_lock: RwLock<Option<f32>>,
+    }
+    macro_rules! serde_qs_eq {
+        ($s:literal, $result:expr) => {
+            let a: MyStruct = serde_qs::from_str($s).unwrap();
+            assert_eq!(a.cell, Cell::new($result));
+            assert_eq!(a.ref_cell, RefCell::new($result));
+            assert_eq!(*a.mutex.lock().unwrap(), $result);
+            assert_eq!(*a.rw_lock.read().unwrap(), $result);
+        };
+    }
+    macro_rules! serde_qs_err {
+        ($rest:literal) => {
+            assert!(serde_qs::from_str::<MyStruct>(concat!("cell", $rest)).is_err());
+            assert!(serde_qs::from_str::<MyStruct>(concat!("ref_cell", $rest)).is_err());
+            assert!(serde_qs::from_str::<MyStruct>(concat!("mutex", $rest)).is_err());
+            assert!(serde_qs::from_str::<MyStruct>(concat!("rw_lock", $rest)).is_err());
+        };
+    }
+    macro_rules! serde_json_eq {
+        ($s:literal, $result:expr) => {
+            let a: MyStruct = serde_json::from_str($s).unwrap();
+            assert_eq!(a.cell, Cell::new($result));
+            assert_eq!(a.ref_cell, RefCell::new($result));
+            assert_eq!(*a.mutex.lock().unwrap(), $result);
+            assert_eq!(*a.rw_lock.read().unwrap(), $result);
+        };
+    }
+    macro_rules! serde_json_err {
+        ($v:tt) => {
+            assert!(serde_json::from_str::<MyStruct>(r#" { "cell": $v } "#).is_err());
+            assert!(serde_json::from_str::<MyStruct>(r#" { "ref_cell": $v } "#).is_err());
+            assert!(serde_json::from_str::<MyStruct>(r#" { "mutex": $v } "#).is_err());
+            assert!(serde_json::from_str::<MyStruct>(r#" { "rw_lock": $v } "#).is_err());
+        };
+    }
+    #[test]
+    fn test_deserialize_wrap_option_number_from_string() {
+        serde_qs_eq!("cell=1&ref_cell=1&mutex=1&rw_lock=1", Some(1.0));
+        serde_qs_eq!("cell=-1&ref_cell=-1&mutex=-1&rw_lock=-1", Some(-1.0));
+        serde_qs_eq!("cell=0.1&ref_cell=0.1&mutex=0.1&rw_lock=0.1", Some(0.1));
+        serde_qs_eq!(
+            "cell=-0.1&ref_cell=-0.1&mutex=-0.1&rw_lock=-0.1",
+            Some(-0.1)
+        );
+        serde_qs_eq!("cell=&ref_cell=&mutex=&rw_lock=", None);
+        serde_qs_eq!("cell&ref_cell&mutex&rw_lock", None);
+
+        serde_qs_err!("=true");
+        serde_qs_err!("=a");
+        serde_qs_err!("[a]=");
+        serde_qs_err!("[]=");
+
+        serde_json_eq!(
+            r#" { "cell":"1","ref_cell":"1","mutex":"1","rw_lock":"1" } "#,
+            Some(1.0)
+        );
+        serde_json_eq!(
+            r#" { "cell":"-1","ref_cell":"-1","mutex":"-1","rw_lock":"-1" } "#,
+            Some(-1.0)
+        );
+        serde_json_eq!(
+            r#" { "cell":"0.1","ref_cell":"0.1","mutex":"0.1","rw_lock":"0.1" } "#,
+            Some(0.1)
+        );
+        serde_json_eq!(
+            r#" { "cell":"-0.1","ref_cell":"-0.1","mutex":"-0.1","rw_lock":"-0.1" } "#,
+            Some(-0.1)
+        );
+        serde_json_eq!(
+            r#" { "cell":1,"ref_cell":1,"mutex":1,"rw_lock":1 } "#,
+            Some(1.0)
+        );
+        serde_json_eq!(
+            r#" { "cell":-1,"ref_cell":-1,"mutex":-1,"rw_lock":-1 } "#,
+            Some(-1.0)
+        );
+        serde_json_eq!(
+            r#" { "cell":0.1,"ref_cell":0.1,"mutex":0.1,"rw_lock":0.1 } "#,
+            Some(0.1)
+        );
+        serde_json_eq!(
+            r#" { "cell":-0.1,"ref_cell":-0.1,"mutex":-0.1,"rw_lock":-0.1 } "#,
+            Some(-0.1)
+        );
+        serde_json_eq!(
+            r#" { "cell":"","ref_cell":"","mutex":"","rw_lock":"" } "#,
+            None
+        );
+        serde_json_eq!(
+            r#" { "cell":null,"ref_cell":null,"mutex":null,"rw_lock":null } "#,
+            None
+        );
+
+        serde_json_err!(true);
+        serde_json_err!("a");
+        serde_json_err!({});
+        serde_json_err!([]);
+    }
+}
+
 /// Deserializes boolean from anything (string, number, boolean). If input is a string,
 /// it is expected, that it is possible to convert it to a number. The return boolean is
 /// `true` if the number was either `1` or `1.0` after parsing.
