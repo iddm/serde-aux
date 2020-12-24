@@ -9,6 +9,10 @@ Contains some useful helper stuff. See [docs](https://docs.rs/serde-aux) for mor
 The library is free for any contributions. The goal of this crate is to improve the user experience of the **serde**
 crate.
 
+## Rust version
+The minimal rust version the library supports is `1.36`.
+Previous versions might still work but not guaranteed to work correctly.
+
 ## License
 
 This project is [licensed under the MIT license](https://github.com/vityafx/serde-aux/blob/master/LICENSE).
