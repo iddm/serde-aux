@@ -718,6 +718,7 @@ where
     enum EmptyOrNot<Y> {
         NonEmpty(Y),
         Empty(EmptyObject),
+        Null,
     }
 
     let empty_or_not: EmptyOrNot<T> = EmptyOrNot::deserialize(deserializer)?;
