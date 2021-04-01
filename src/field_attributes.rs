@@ -728,3 +728,49 @@ where
         _ => Ok(T::default()),
     }
 }
+
+/// Deserializes a comma separated string into a `Vec<T>`.
+///
+/// # Example:
+///
+/// ```rust
+/// use serde_aux::prelude::*;
+///
+/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "deserialize_vec_from_string")]
+///     list: Vec<i32>,
+/// }
+///
+/// fn main() {
+///     let s = r#" { "list": "1,2,3,4" } "#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+///
+///     let s = r#" { "list": [1,2,3,4] } "#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+/// }
+/// ```
+pub fn deserialize_vec_from_string<'de, T, D>(deserializer: D) -> Result<Vec<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: FromStr + serde::Deserialize<'de>,
+    <T as FromStr>::Err: std::fmt::Display,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum StringOrVec<T> {
+        String(String),
+        Vec(Vec<T>),
+    }
+
+    match StringOrVec::<T>::deserialize(deserializer)? {
+        StringOrVec::String(s) => s
+            .split(",")
+            .map(T::from_str)
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(serde::de::Error::custom),
+        StringOrVec::Vec(v) => Ok(v),
+    }
+}
