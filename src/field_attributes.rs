@@ -738,7 +738,7 @@ where
 ///
 /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
 /// struct MyStruct {
-///     #[serde(deserialize_with = "deserialize_vec_from_string")]
+///     #[serde(deserialize_with = "deserialize_vec_from_string_or_vec")]
 ///     list: Vec<i32>,
 /// }
 ///
@@ -752,7 +752,7 @@ where
 ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
 /// }
 /// ```
-pub fn deserialize_vec_from_string<'de, T, D>(deserializer: D) -> Result<Vec<T>, D::Error>
+pub fn deserialize_vec_from_string_or_vec<'de, T, D>(deserializer: D) -> Result<Vec<T>, D::Error>
 where
     D: serde::Deserializer<'de>,
     T: FromStr + serde::Deserialize<'de>,
