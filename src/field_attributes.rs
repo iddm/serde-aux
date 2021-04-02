@@ -758,6 +758,50 @@ where
     T: FromStr + serde::Deserialize<'de>,
     <T as FromStr>::Err: std::fmt::Display,
 {
+    deserialize_vec_from_string_or_vec_on_separator(|c| c == ',')(deserializer)
+}
+
+/// Deserializes a string into a `Vec<T>`. Splitting is defined by `sep`
+///
+/// # Example:
+///
+/// ```rust
+/// use serde_aux::prelude::*;
+/// use std::str::FromStr;
+///
+/// fn dash_or_plus_separated<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+/// where
+///     D: serde::Deserializer<'de>,
+///     T: FromStr + serde::Deserialize<'de>,
+///     <T as FromStr>::Err: std::fmt::Display,
+/// {
+///     deserialize_vec_from_string_or_vec_on_separator(|c| c == '-' || c == '+')(deserializer)
+/// }
+///
+/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "dash_or_plus_separated")]
+///     list: Vec<i32>,
+/// }
+///
+/// fn main() {
+///     let s = r#" { "list": "1-2+3-4" } "#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+///
+///     let s = r#" { "list": [1,2,3,4] } "#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+/// }
+/// ```
+pub fn deserialize_vec_from_string_or_vec_on_separator<'de, T, D>(
+    sep: impl Fn(char) -> bool,
+) -> impl Fn(D) -> Result<Vec<T>, <D as serde::Deserializer<'de>>::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: FromStr + serde::Deserialize<'de>,
+    <T as FromStr>::Err: std::fmt::Display,
+{
     #[derive(Deserialize)]
     #[serde(untagged)]
     enum StringOrVec<T> {
@@ -765,9 +809,9 @@ where
         Vec(Vec<T>),
     }
 
-    match StringOrVec::<T>::deserialize(deserializer)? {
+    move |deserializer| match StringOrVec::<T>::deserialize(deserializer)? {
         StringOrVec::String(s) => s
-            .split(",")
+            .split(&sep)
             .map(T::from_str)
             .collect::<Result<Vec<_>, _>>()
             .map_err(serde::de::Error::custom),
