@@ -802,6 +802,55 @@ where
     T: FromStr + serde::Deserialize<'de>,
     <T as FromStr>::Err: std::fmt::Display,
 {
+    deserialize_vec_from_string_or_vec_on_separator_with_parser(sep, T::from_str)
+}
+
+/// Deserializes a string into a `Vec<T>`. Splitting is defined by `sep`. Parsing into `T` is
+/// defined by `parser`
+///
+/// # Example:
+///
+/// ```rust
+/// use serde_aux::prelude::*;
+/// use std::str::FromStr;
+///
+/// fn spaces_after_comma_allowed<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+/// where
+///     D: serde::Deserializer<'de>,
+///     T: FromStr + serde::Deserialize<'de>,
+///     <T as FromStr>::Err: std::fmt::Display,
+/// {
+///     deserialize_vec_from_string_or_vec_on_separator_with_parser(
+///         |c| c == ',',
+///         |s| s.trim().parse()
+///     )(deserializer)
+/// }
+///
+/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "spaces_after_comma_allowed")]
+///     list: Vec<i32>,
+/// }
+///
+/// fn main() {
+///     let s = r#" { "list": "1,   2     ,     3      ,      4    " } "#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+///
+///     let s = r#" { "list": [1,2,3,4] } "#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+/// }
+/// ```
+pub fn deserialize_vec_from_string_or_vec_on_separator_with_parser<'de, T, D, E>(
+    sep: impl Fn(char) -> bool,
+    parser: impl Fn(&str) -> Result<T, E>,
+) -> impl Fn(D) -> Result<Vec<T>, <D as serde::Deserializer<'de>>::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: FromStr + serde::Deserialize<'de>,
+    E: std::fmt::Display,
+{
     #[derive(Deserialize)]
     #[serde(untagged)]
     enum StringOrVec<T> {
@@ -812,7 +861,7 @@ where
     move |deserializer| match StringOrVec::<T>::deserialize(deserializer)? {
         StringOrVec::String(s) => s
             .split(&sep)
-            .map(T::from_str)
+            .map(&parser)
             .collect::<Result<Vec<_>, _>>()
             .map_err(serde::de::Error::custom),
         StringOrVec::Vec(v) => Ok(v),
