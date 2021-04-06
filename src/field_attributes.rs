@@ -755,13 +755,13 @@ where
 pub fn deserialize_vec_from_string_or_vec<'de, T, D>(deserializer: D) -> Result<Vec<T>, D::Error>
 where
     D: serde::Deserializer<'de>,
-    T: FromStr + serde::Deserialize<'de>,
+    T: FromStr + serde::Deserialize<'de> + 'static,
     <T as FromStr>::Err: std::fmt::Display,
 {
-    deserialize_vec_from_string_or_vec_on_separator(|c| c == ',')(deserializer)
+    StringOrVecToVec::default().to_deserializer()(deserializer)
 }
 
-/// Deserializes a string into a `Vec<T>`. Splitting is defined by `sep`
+/// Builder to create a parser, that parses a separated string or a vec into a vec.
 ///
 /// # Example:
 ///
@@ -769,23 +769,23 @@ where
 /// use serde_aux::prelude::*;
 /// use std::str::FromStr;
 ///
-/// fn dash_or_plus_separated<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+/// fn parser<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
 /// where
 ///     D: serde::Deserializer<'de>,
-///     T: FromStr + serde::Deserialize<'de>,
+///     T: FromStr + serde::Deserialize<'de> + 'static,
 ///     <T as FromStr>::Err: std::fmt::Display,
 /// {
-///     deserialize_vec_from_string_or_vec_on_separator(|c| c == '-' || c == '+')(deserializer)
+///     StringOrVecToVec::default().to_deserializer()(deserializer)
 /// }
 ///
 /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
 /// struct MyStruct {
-///     #[serde(deserialize_with = "dash_or_plus_separated")]
+///     #[serde(deserialize_with = "parser")]
 ///     list: Vec<i32>,
 /// }
 ///
 /// fn main() {
-///     let s = r#" { "list": "1-2+3-4" } "#;
+///     let s = r#" { "list": "1,2,3,4" } "#;
 ///     let a: MyStruct = serde_json::from_str(s).unwrap();
 ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
 ///
@@ -794,76 +794,170 @@ where
 ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
 /// }
 /// ```
-pub fn deserialize_vec_from_string_or_vec_on_separator<'de, T, D>(
-    sep: impl Fn(char) -> bool,
-) -> impl Fn(D) -> Result<Vec<T>, <D as serde::Deserializer<'de>>::Error>
-where
-    D: serde::Deserializer<'de>,
-    T: FromStr + serde::Deserialize<'de>,
-    <T as FromStr>::Err: std::fmt::Display,
-{
-    deserialize_vec_from_string_or_vec_on_separator_with_parser(sep, T::from_str)
+pub struct StringOrVecToVec<T, E> {
+    separator: Box<dyn Fn(char) -> bool>,
+    parser: Box<dyn Fn(&str) -> Result<T, E>>,
 }
 
-/// Deserializes a string into a `Vec<T>`. Splitting is defined by `sep`. Parsing into `T` is
-/// defined by `parser`
-///
-/// # Example:
-///
-/// ```rust
-/// use serde_aux::prelude::*;
-/// use std::str::FromStr;
-///
-/// fn spaces_after_comma_allowed<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
-/// where
-///     D: serde::Deserializer<'de>,
-///     T: FromStr + serde::Deserialize<'de>,
-///     <T as FromStr>::Err: std::fmt::Display,
-/// {
-///     deserialize_vec_from_string_or_vec_on_separator_with_parser(
-///         |c| c == ',',
-///         |s| s.trim().parse()
-///     )(deserializer)
-/// }
-///
-/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
-/// struct MyStruct {
-///     #[serde(deserialize_with = "spaces_after_comma_allowed")]
-///     list: Vec<i32>,
-/// }
-///
-/// fn main() {
-///     let s = r#" { "list": "1,   2     ,     3      ,      4    " } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(&a.list, &[1, 2, 3, 4]);
-///
-///     let s = r#" { "list": [1,2,3,4] } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(&a.list, &[1, 2, 3, 4]);
-/// }
-/// ```
-pub fn deserialize_vec_from_string_or_vec_on_separator_with_parser<'de, T, D, E>(
-    sep: impl Fn(char) -> bool,
-    parser: impl Fn(&str) -> Result<T, E>,
-) -> impl Fn(D) -> Result<Vec<T>, <D as serde::Deserializer<'de>>::Error>
+impl<'de, T> Default for StringOrVecToVec<T, T::Err>
 where
-    D: serde::Deserializer<'de>,
-    T: FromStr + serde::Deserialize<'de>,
-    E: std::fmt::Display,
+    T: FromStr + serde::Deserialize<'de> + 'static,
+    <T as FromStr>::Err: std::fmt::Display,
 {
-    #[derive(Deserialize)]
-    #[serde(untagged)]
-    enum StringOrVec<T> {
-        String(String),
-        Vec(Vec<T>),
+    fn default() -> Self {
+        Self::new(|c| c == ',', T::from_str)
+    }
+}
+
+impl<'de, T> StringOrVecToVec<T, T::Err>
+where
+    T: FromStr + serde::Deserialize<'de> + 'static,
+    <T as FromStr>::Err: std::fmt::Display,
+{
+    /// Create a `StringOrVecToVec` builder with a custom separator. `T::from_str` is used to parse
+    /// the elements of the list.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use serde_aux::prelude::*;
+    /// use std::str::FromStr;
+    ///
+    /// fn parser<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+    /// where
+    ///     D: serde::Deserializer<'de>,
+    ///     T: FromStr + serde::Deserialize<'de> + 'static,
+    ///     <T as FromStr>::Err: std::fmt::Display,
+    /// {
+    ///     StringOrVecToVec::with_separator(|c| c == '-' || c == '+').to_deserializer()(deserializer)
+    /// }
+    ///
+    /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+    /// struct MyStruct {
+    ///     #[serde(deserialize_with = "parser")]
+    ///     list: Vec<i32>,
+    /// }
+    ///
+    /// fn main() {
+    ///     let s = r#" { "list": "1-2+3-4" } "#;
+    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
+    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    ///
+    ///     let s = r#" { "list": [1,2,3,4] } "#;
+    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
+    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    /// }
+    /// ```
+    pub fn with_separator(separator: impl Fn(char) -> bool + 'static) -> Self {
+        Self::new(separator, T::from_str)
+    }
+}
+
+impl<T, E> StringOrVecToVec<T, E> {
+    /// Create a deserializer with a custom separator and parsing function.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use serde_aux::prelude::*;
+    /// use std::str::FromStr;
+    ///
+    /// fn parser<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+    /// where
+    ///     D: serde::Deserializer<'de>,
+    ///     T: FromStr + serde::Deserialize<'de> + 'static,
+    ///     <T as FromStr>::Err: std::fmt::Display,
+    /// {
+    ///     StringOrVecToVec::new(|c| c == '-' || c == '+', |s| s.trim().parse()).to_deserializer()(deserializer)
+    /// }
+    ///
+    /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+    /// struct MyStruct {
+    ///     #[serde(deserialize_with = "parser")]
+    ///     list: Vec<i32>,
+    /// }
+    ///
+    /// fn main() {
+    ///     let s = r#" { "list": "1 - 2    +  3-    4    " } "#;
+    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
+    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    ///
+    ///     let s = r#" { "list": [1,2,3,4] } "#;
+    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
+    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    /// }
+    /// ```
+    pub fn new(
+        separator: impl Fn(char) -> bool + 'static,
+        parser: impl Fn(&str) -> Result<T, E> + 'static,
+    ) -> Self {
+        Self {
+            separator: Box::new(separator),
+            parser: Box::new(parser),
+        }
     }
 
-    move |deserializer| match StringOrVec::<T>::deserialize(deserializer)? {
-        StringOrVec::String(s) => s
-            .split(&sep)
-            .map(&parser)
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(serde::de::Error::custom),
-        StringOrVec::Vec(v) => Ok(v),
+    /// Create a deserializer with a custom parsing function. The input string will be separated on
+    /// `,`.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use serde_aux::prelude::*;
+    /// use std::str::FromStr;
+    ///
+    /// fn parser<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+    /// where
+    ///     D: serde::Deserializer<'de>,
+    ///     T: FromStr + serde::Deserialize<'de> + 'static,
+    ///     <T as FromStr>::Err: std::fmt::Display,
+    /// {
+    ///     StringOrVecToVec::with_parser(|s| s.trim().parse()).to_deserializer()(deserializer)
+    /// }
+    ///
+    /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+    /// struct MyStruct {
+    ///     #[serde(deserialize_with = "parser")]
+    ///     list: Vec<i32>,
+    /// }
+    ///
+    /// fn main() {
+    ///     let s = r#" { "list": "1 , 2    ,  3,    4    " } "#;
+    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
+    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    ///
+    ///     let s = r#" { "list": [1,2,3,4] } "#;
+    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
+    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    /// }
+    /// ```
+    pub fn with_parser(parser: impl Fn(&str) -> Result<T, E> + 'static) -> Self {
+        Self::new(|c| c == ',', parser)
+    }
+
+    /// Creates the actual deserializer from this builder.
+    pub fn to_deserializer<'de, D>(
+        self,
+    ) -> impl Fn(D) -> Result<Vec<T>, <D as serde::Deserializer<'de>>::Error>
+    where
+        D: serde::Deserializer<'de>,
+        T: serde::Deserialize<'de>,
+        E: std::fmt::Display,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum StringOrVec<T> {
+            String(String),
+            Vec(Vec<T>),
+        }
+
+        move |deserializer| match StringOrVec::<T>::deserialize(deserializer)? {
+            StringOrVec::String(s) => s
+                .split(&self.separator)
+                .map(&self.parser)
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(serde::de::Error::custom),
+            StringOrVec::Vec(v) => Ok(v),
+        }
     }
 }
