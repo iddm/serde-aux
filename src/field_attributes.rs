@@ -861,12 +861,61 @@ impl<'a> From<Vec<Pattern<'a>>> for Pattern<'a> {
     }
 }
 
+/// # Example
+///
+/// ```rust
+/// use serde_aux::prelude::*;
+/// use std::str::FromStr;
+///
+/// fn parser<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+/// where
+///     D: serde::Deserializer<'de>,
+///     T: FromStr + serde::Deserialize<'de> + 'static,
+///     <T as FromStr>::Err: std::fmt::Display,
+/// {
+///     StringOrVecToVec::with_separator(vec!['-', '+'].into_iter().collect::<Pattern>()).to_deserializer()(deserializer)
+/// }
+///
+/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "parser")]
+///     list: Vec<i32>,
+/// }
+///
+/// fn main() {
+///     let s = r#" { "list": "1-2+3-4" } "#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+///
+///     let s = r#" { "list": [1,2,3,4] } "#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+/// }
+/// ```
 impl<'a> std::iter::FromIterator<Pattern<'a>> for Pattern<'a> {
     fn from_iter<I>(iter: I) -> Self
     where
         I: IntoIterator<Item = Pattern<'a>>,
     {
         Pattern::Multiple(iter.into_iter().collect())
+    }
+}
+
+impl<'a> std::iter::FromIterator<char> for Pattern<'a> {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = char>,
+    {
+        Pattern::Multiple(iter.into_iter().map(Pattern::from).collect())
+    }
+}
+
+impl<'a> std::iter::FromIterator<&'a str> for Pattern<'a> {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        Pattern::Multiple(iter.into_iter().map(Pattern::from).collect())
     }
 }
 
