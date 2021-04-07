@@ -794,12 +794,43 @@ where
 ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
 /// }
 /// ```
-pub struct StringOrVecToVec<T, E> {
-    separator: Box<dyn Fn(char) -> bool>,
+pub struct StringOrVecToVec<'a, T, E> {
+    separator: Pattern<'a>,
     parser: Box<dyn Fn(&str) -> Result<T, E>>,
 }
 
-impl<'de, T> Default for StringOrVecToVec<T, T::Err>
+/// Pattern on which a string can be split.
+pub enum Pattern<'a> {
+    /// Split on a matching char
+    Char(char),
+    /// Split on a matching str
+    Str(&'a str),
+    /// Split if a char matches the predicate
+    Pred(Box<dyn Fn(char) -> bool>),
+}
+
+impl<'a> From<char> for Pattern<'a> {
+    fn from(c: char) -> Self {
+        Pattern::Char(c)
+    }
+}
+
+impl<'a> From<&'a str> for Pattern<'a> {
+    fn from(s: &'a str) -> Self {
+        Pattern::Str(s)
+    }
+}
+
+impl<'a, P> From<P> for Pattern<'a>
+where
+    P: Fn(char) -> bool + 'static,
+{
+    fn from(pred: P) -> Self {
+        Pattern::Pred(Box::new(pred))
+    }
+}
+
+impl<'a, 'de, T> Default for StringOrVecToVec<'a, T, T::Err>
 where
     T: FromStr + serde::Deserialize<'de> + 'static,
     <T as FromStr>::Err: std::fmt::Display,
@@ -809,7 +840,7 @@ where
     }
 }
 
-impl<'de, T> StringOrVecToVec<T, T::Err>
+impl<'a, 'de, T> StringOrVecToVec<'a, T, T::Err>
 where
     T: FromStr + serde::Deserialize<'de> + 'static,
     <T as FromStr>::Err: std::fmt::Display,
@@ -853,7 +884,7 @@ where
     }
 }
 
-impl<T, E> StringOrVecToVec<T, E> {
+impl<'a, T, E> StringOrVecToVec<'a, T, E> {
     /// Create a deserializer with a custom separator and parsing function.
     ///
     /// # Example:
@@ -868,7 +899,7 @@ impl<T, E> StringOrVecToVec<T, E> {
     ///     T: FromStr + serde::Deserialize<'de> + 'static,
     ///     <T as FromStr>::Err: std::fmt::Display,
     /// {
-    ///     StringOrVecToVec::new(|c| c == '-' || c == '+', |s| s.trim().parse()).to_deserializer()(deserializer)
+    ///     StringOrVecToVec::new('-', |s| s.trim().parse()).to_deserializer()(deserializer)
     /// }
     ///
     /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -878,7 +909,7 @@ impl<T, E> StringOrVecToVec<T, E> {
     /// }
     ///
     /// fn main() {
-    ///     let s = r#" { "list": "1 - 2    +  3-    4    " } "#;
+    ///     let s = r#" { "list": "1 - 2    -  3-    4    " } "#;
     ///     let a: MyStruct = serde_json::from_str(s).unwrap();
     ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
     ///
@@ -888,11 +919,11 @@ impl<T, E> StringOrVecToVec<T, E> {
     /// }
     /// ```
     pub fn new(
-        separator: impl Fn(char) -> bool + 'static,
+        separator: impl Into<Pattern<'a>>,
         parser: impl Fn(&str) -> Result<T, E> + 'static,
     ) -> Self {
         Self {
-            separator: Box::new(separator),
+            separator: separator.into(),
             parser: Box::new(parser),
         }
     }
@@ -940,6 +971,7 @@ impl<T, E> StringOrVecToVec<T, E> {
         self,
     ) -> impl Fn(D) -> Result<Vec<T>, <D as serde::Deserializer<'de>>::Error>
     where
+        'a: 'de,
         D: serde::Deserializer<'de>,
         T: serde::Deserialize<'de>,
         E: std::fmt::Display,
@@ -952,11 +984,12 @@ impl<T, E> StringOrVecToVec<T, E> {
         }
 
         move |deserializer| match StringOrVec::<T>::deserialize(deserializer)? {
-            StringOrVec::String(s) => s
-                .split(&self.separator)
-                .map(&self.parser)
-                .collect::<Result<Vec<_>, _>>()
-                .map_err(serde::de::Error::custom),
+            StringOrVec::String(s) => match &self.separator {
+                Pattern::Char(c) => s.split(*c).map(&self.parser).collect::<Result<Vec<_>, _>>(),
+                Pattern::Str(s) => s.split(s).map(&self.parser).collect::<Result<Vec<_>, _>>(),
+                Pattern::Pred(p) => s.split(p).map(&self.parser).collect::<Result<Vec<_>, _>>(),
+            }
+            .map_err(serde::de::Error::custom),
             StringOrVec::Vec(v) => Ok(v),
         }
     }
