@@ -807,6 +807,40 @@ pub enum Pattern<'a> {
     Str(&'a str),
     /// Split if a char matches the predicate
     Pred(Box<dyn Fn(char) -> bool>),
+    /// Multiple patterns
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use serde_aux::prelude::*;
+    /// use std::str::FromStr;
+    ///
+    /// fn parser<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+    /// where
+    ///     D: serde::Deserializer<'de>,
+    ///     T: FromStr + serde::Deserialize<'de> + 'static,
+    ///     <T as FromStr>::Err: std::fmt::Display,
+    /// {
+    ///     StringOrVecToVec::with_separator(vec![Pattern::Char('+'), Pattern::Char('-')]).to_deserializer()(deserializer)
+    /// }
+    ///
+    /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+    /// struct MyStruct {
+    ///     #[serde(deserialize_with = "parser")]
+    ///     list: Vec<i32>,
+    /// }
+    ///
+    /// fn main() {
+    ///     let s = r#" { "list": "1-2+3-4" } "#;
+    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
+    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    ///
+    ///     let s = r#" { "list": [1,2,3,4] } "#;
+    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
+    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    /// }
+    /// ```
+    Multiple(Vec<Pattern<'a>>),
 }
 
 impl<'a> From<char> for Pattern<'a> {
@@ -818,6 +852,12 @@ impl<'a> From<char> for Pattern<'a> {
 impl<'a> From<&'a str> for Pattern<'a> {
     fn from(s: &'a str) -> Self {
         Pattern::Str(s)
+    }
+}
+
+impl<'a> From<Vec<Pattern<'a>>> for Pattern<'a> {
+    fn from(patterns: Vec<Pattern<'a>>) -> Self {
+        Pattern::Multiple(patterns)
     }
 }
 
@@ -879,7 +919,7 @@ where
     ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
     /// }
     /// ```
-    pub fn with_separator(separator: impl Fn(char) -> bool + 'static) -> Self {
+    pub fn with_separator(separator: impl Into<Pattern<'a>>) -> Self {
         Self::new(separator, T::from_str)
     }
 }
@@ -984,13 +1024,41 @@ impl<'a, T, E> StringOrVecToVec<'a, T, E> {
         }
 
         move |deserializer| match StringOrVec::<T>::deserialize(deserializer)? {
-            StringOrVec::String(s) => match &self.separator {
-                Pattern::Char(c) => s.split(*c).map(&self.parser).collect::<Result<Vec<_>, _>>(),
-                Pattern::Str(s) => s.split(s).map(&self.parser).collect::<Result<Vec<_>, _>>(),
-                Pattern::Pred(p) => s.split(p).map(&self.parser).collect::<Result<Vec<_>, _>>(),
-            }
-            .map_err(serde::de::Error::custom),
+            StringOrVec::String(s) => Ok(self
+                .separator
+                .split(&s)
+                .into_iter()
+                .map(&self.parser)
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(serde::de::Error::custom)?),
             StringOrVec::Vec(v) => Ok(v),
+        }
+    }
+}
+
+impl<'a> Pattern<'a> {
+    fn split<'b>(&self, input: &'b str) -> Vec<&'b str> {
+        match self {
+            Pattern::Char(c) => input.split(*c).collect(),
+            Pattern::Str(s) => input.split(s).collect(),
+            Pattern::Pred(p) => input.split(p).collect(),
+            Pattern::Multiple(patterns) => {
+                let mut split = vec![input];
+                for pattern in patterns {
+                    let delete_until = split.len();
+                    let mut new_split = Vec::new();
+                    for s in &split {
+                        new_split.append(&mut pattern.split(s));
+                    }
+
+                    if !new_split.is_empty() {
+                        split = split.split_off(delete_until);
+                    }
+
+                    split.append(&mut new_split);
+                }
+                split
+            }
         }
     }
 }
