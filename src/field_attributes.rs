@@ -861,6 +861,15 @@ impl<'a> From<Vec<Pattern<'a>>> for Pattern<'a> {
     }
 }
 
+impl<'a> std::iter::FromIterator<Pattern<'a>> for Pattern<'a> {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = Pattern<'a>>,
+    {
+        Pattern::Multiple(iter.into_iter().collect())
+    }
+}
+
 impl<'a, P> From<P> for Pattern<'a>
 where
     P: Fn(char) -> bool + 'static,
