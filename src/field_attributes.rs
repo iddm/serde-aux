@@ -1090,7 +1090,7 @@ impl<'a, T, E> StringOrVecToVec<'a, T, E> {
             StringOrVec::String(s) => Ok(separator
                 .split(&s)
                 .into_iter()
-                .map(|x| (&mut parser)(x))
+                .map(&mut parser)
                 .collect::<Result<Vec<_>, _>>()
                 .map_err(serde::de::Error::custom)?),
             StringOrVec::Vec(v) => Ok(v),
