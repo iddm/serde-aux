@@ -755,13 +755,13 @@ where
 pub fn deserialize_vec_from_string_or_vec<'de, T, D>(deserializer: D) -> Result<Vec<T>, D::Error>
 where
     D: serde::Deserializer<'de>,
-    T: FromStr + serde::Deserialize<'de>,
+    T: FromStr + serde::Deserialize<'de> + 'static,
     <T as FromStr>::Err: std::fmt::Display,
 {
-    deserialize_vec_from_string_or_vec_on_separator(|c| c == ',')(deserializer)
+    StringOrVecToVec::default().to_deserializer()(deserializer)
 }
 
-/// Deserializes a string into a `Vec<T>`. Splitting is defined by `sep`
+/// Builder to create a parser, that parses a separated string or a vec into a vec.
 ///
 /// # Example:
 ///
@@ -769,18 +769,116 @@ where
 /// use serde_aux::prelude::*;
 /// use std::str::FromStr;
 ///
-/// fn dash_or_plus_separated<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+/// fn parser<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
 /// where
 ///     D: serde::Deserializer<'de>,
-///     T: FromStr + serde::Deserialize<'de>,
+///     T: FromStr + serde::Deserialize<'de> + 'static,
 ///     <T as FromStr>::Err: std::fmt::Display,
 /// {
-///     deserialize_vec_from_string_or_vec_on_separator(|c| c == '-' || c == '+')(deserializer)
+///     StringOrVecToVec::default().to_deserializer()(deserializer)
 /// }
 ///
 /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
 /// struct MyStruct {
-///     #[serde(deserialize_with = "dash_or_plus_separated")]
+///     #[serde(deserialize_with = "parser")]
+///     list: Vec<i32>,
+/// }
+///
+/// fn main() {
+///     let s = r#" { "list": "1,2,3,4" } "#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+///
+///     let s = r#" { "list": [1,2,3,4] } "#;
+///     let a: MyStruct = serde_json::from_str(s).unwrap();
+///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+/// }
+/// ```
+pub struct StringOrVecToVec<'a, T, E> {
+    separator: Pattern<'a>,
+    parser: Box<dyn FnMut(&str) -> Result<T, E>>,
+}
+
+/// Pattern on which a string can be split.
+pub enum Pattern<'a> {
+    /// Split on a matching char
+    Char(char),
+    /// Split on a matching str
+    Str(&'a str),
+    /// Split if a char matches the predicate
+    Pred(Box<dyn Fn(char) -> bool>),
+    /// Multiple patterns
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use serde_aux::prelude::*;
+    /// use std::str::FromStr;
+    ///
+    /// fn parser<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+    /// where
+    ///     D: serde::Deserializer<'de>,
+    ///     T: FromStr + serde::Deserialize<'de> + 'static,
+    ///     <T as FromStr>::Err: std::fmt::Display,
+    /// {
+    ///     StringOrVecToVec::with_separator(vec![Pattern::Char('+'), Pattern::Char('-')]).to_deserializer()(deserializer)
+    /// }
+    ///
+    /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+    /// struct MyStruct {
+    ///     #[serde(deserialize_with = "parser")]
+    ///     list: Vec<i32>,
+    /// }
+    ///
+    /// fn main() {
+    ///     let s = r#" { "list": "1-2+3-4" } "#;
+    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
+    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    ///
+    ///     let s = r#" { "list": [1,2,3,4] } "#;
+    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
+    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    /// }
+    /// ```
+    Multiple(Vec<Pattern<'a>>),
+}
+
+impl<'a> From<char> for Pattern<'a> {
+    fn from(c: char) -> Self {
+        Pattern::Char(c)
+    }
+}
+
+impl<'a> From<&'a str> for Pattern<'a> {
+    fn from(s: &'a str) -> Self {
+        Pattern::Str(s)
+    }
+}
+
+impl<'a> From<Vec<Pattern<'a>>> for Pattern<'a> {
+    fn from(patterns: Vec<Pattern<'a>>) -> Self {
+        Pattern::Multiple(patterns)
+    }
+}
+
+/// # Example
+///
+/// ```rust
+/// use serde_aux::prelude::*;
+/// use std::str::FromStr;
+///
+/// fn parser<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+/// where
+///     D: serde::Deserializer<'de>,
+///     T: FromStr + serde::Deserialize<'de> + 'static,
+///     <T as FromStr>::Err: std::fmt::Display,
+/// {
+///     StringOrVecToVec::with_separator(vec!['-', '+'].into_iter().collect::<Pattern>()).to_deserializer()(deserializer)
+/// }
+///
+/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "parser")]
 ///     list: Vec<i32>,
 /// }
 ///
@@ -794,27 +892,235 @@ where
 ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
 /// }
 /// ```
-pub fn deserialize_vec_from_string_or_vec_on_separator<'de, T, D>(
-    sep: impl Fn(char) -> bool,
-) -> impl Fn(D) -> Result<Vec<T>, <D as serde::Deserializer<'de>>::Error>
+impl<'a> std::iter::FromIterator<Pattern<'a>> for Pattern<'a> {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = Pattern<'a>>,
+    {
+        Pattern::Multiple(iter.into_iter().collect())
+    }
+}
+
+impl<'a> std::iter::FromIterator<char> for Pattern<'a> {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = char>,
+    {
+        Pattern::Multiple(iter.into_iter().map(Pattern::from).collect())
+    }
+}
+
+impl<'a> std::iter::FromIterator<&'a str> for Pattern<'a> {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = &'a str>,
+    {
+        Pattern::Multiple(iter.into_iter().map(Pattern::from).collect())
+    }
+}
+
+impl<'a, P> From<P> for Pattern<'a>
 where
-    D: serde::Deserializer<'de>,
-    T: FromStr + serde::Deserialize<'de>,
+    P: Fn(char) -> bool + 'static,
+{
+    fn from(pred: P) -> Self {
+        Pattern::Pred(Box::new(pred))
+    }
+}
+
+impl<'a, 'de, T> Default for StringOrVecToVec<'a, T, T::Err>
+where
+    T: FromStr + serde::Deserialize<'de> + 'static,
     <T as FromStr>::Err: std::fmt::Display,
 {
-    #[derive(Deserialize)]
-    #[serde(untagged)]
-    enum StringOrVec<T> {
-        String(String),
-        Vec(Vec<T>),
+    fn default() -> Self {
+        Self::new(|c| c == ',', T::from_str)
+    }
+}
+
+impl<'a, 'de, T> StringOrVecToVec<'a, T, T::Err>
+where
+    T: FromStr + serde::Deserialize<'de> + 'static,
+    <T as FromStr>::Err: std::fmt::Display,
+{
+    /// Create a `StringOrVecToVec` builder with a custom separator. `T::from_str` is used to parse
+    /// the elements of the list.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use serde_aux::prelude::*;
+    /// use std::str::FromStr;
+    ///
+    /// fn parser<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+    /// where
+    ///     D: serde::Deserializer<'de>,
+    ///     T: FromStr + serde::Deserialize<'de> + 'static,
+    ///     <T as FromStr>::Err: std::fmt::Display,
+    /// {
+    ///     StringOrVecToVec::with_separator(|c| c == '-' || c == '+').to_deserializer()(deserializer)
+    /// }
+    ///
+    /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+    /// struct MyStruct {
+    ///     #[serde(deserialize_with = "parser")]
+    ///     list: Vec<i32>,
+    /// }
+    ///
+    /// fn main() {
+    ///     let s = r#" { "list": "1-2+3-4" } "#;
+    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
+    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    ///
+    ///     let s = r#" { "list": [1,2,3,4] } "#;
+    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
+    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    /// }
+    /// ```
+    pub fn with_separator(separator: impl Into<Pattern<'a>>) -> Self {
+        Self::new(separator, T::from_str)
+    }
+}
+
+impl<'a, T, E> StringOrVecToVec<'a, T, E> {
+    /// Create a deserializer with a custom separator and parsing function.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use serde_aux::prelude::*;
+    /// use std::str::FromStr;
+    ///
+    /// fn parser<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+    /// where
+    ///     D: serde::Deserializer<'de>,
+    ///     T: FromStr + serde::Deserialize<'de> + 'static,
+    ///     <T as FromStr>::Err: std::fmt::Display,
+    /// {
+    ///     StringOrVecToVec::new('-', |s| s.trim().parse()).to_deserializer()(deserializer)
+    /// }
+    ///
+    /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+    /// struct MyStruct {
+    ///     #[serde(deserialize_with = "parser")]
+    ///     list: Vec<i32>,
+    /// }
+    ///
+    /// fn main() {
+    ///     let s = r#" { "list": "1 - 2    -  3-    4    " } "#;
+    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
+    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    ///
+    ///     let s = r#" { "list": [1,2,3,4] } "#;
+    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
+    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    /// }
+    /// ```
+    pub fn new(
+        separator: impl Into<Pattern<'a>>,
+        parser: impl FnMut(&str) -> Result<T, E> + 'static,
+    ) -> Self {
+        Self {
+            separator: separator.into(),
+            parser: Box::new(parser),
+        }
     }
 
-    move |deserializer| match StringOrVec::<T>::deserialize(deserializer)? {
-        StringOrVec::String(s) => s
-            .split(&sep)
-            .map(T::from_str)
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(serde::de::Error::custom),
-        StringOrVec::Vec(v) => Ok(v),
+    /// Create a deserializer with a custom parsing function. The input string will be separated on
+    /// `,`.
+    ///
+    /// # Example:
+    ///
+    /// ```rust
+    /// use serde_aux::prelude::*;
+    /// use std::str::FromStr;
+    ///
+    /// fn parser<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+    /// where
+    ///     D: serde::Deserializer<'de>,
+    ///     T: FromStr + serde::Deserialize<'de> + 'static,
+    ///     <T as FromStr>::Err: std::fmt::Display,
+    /// {
+    ///     StringOrVecToVec::with_parser(|s| s.trim().parse()).to_deserializer()(deserializer)
+    /// }
+    ///
+    /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+    /// struct MyStruct {
+    ///     #[serde(deserialize_with = "parser")]
+    ///     list: Vec<i32>,
+    /// }
+    ///
+    /// fn main() {
+    ///     let s = r#" { "list": "1 , 2    ,  3,    4    " } "#;
+    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
+    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    ///
+    ///     let s = r#" { "list": [1,2,3,4] } "#;
+    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
+    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    /// }
+    /// ```
+    pub fn with_parser(parser: impl FnMut(&str) -> Result<T, E> + 'static) -> Self {
+        Self::new(|c| c == ',', parser)
+    }
+
+    /// Creates the actual deserializer from this builder.
+    pub fn to_deserializer<'de, D>(
+        self,
+    ) -> impl FnMut(D) -> Result<Vec<T>, <D as serde::Deserializer<'de>>::Error>
+    where
+        'a: 'de,
+        D: serde::Deserializer<'de>,
+        T: serde::Deserialize<'de>,
+        E: std::fmt::Display,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum StringOrVec<T> {
+            String(String),
+            Vec(Vec<T>),
+        }
+
+        let StringOrVecToVec {
+            mut parser,
+            separator,
+        } = self;
+
+        move |deserializer| match StringOrVec::<T>::deserialize(deserializer)? {
+            StringOrVec::String(s) => Ok(separator
+                .split(&s)
+                .into_iter()
+                .map(&mut parser)
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(serde::de::Error::custom)?),
+            StringOrVec::Vec(v) => Ok(v),
+        }
+    }
+}
+
+impl<'a> Pattern<'a> {
+    fn split<'b>(&self, input: &'b str) -> Vec<&'b str> {
+        match self {
+            Pattern::Char(c) => input.split(*c).collect(),
+            Pattern::Str(s) => input.split(s).collect(),
+            Pattern::Pred(p) => input.split(p).collect(),
+            Pattern::Multiple(patterns) => {
+                let mut split = vec![input];
+                for pattern in patterns {
+                    let delete_until = split.len();
+                    let mut new_split = Vec::new();
+                    for s in &split {
+                        new_split.append(&mut pattern.split(s));
+                    }
+
+                    if !new_split.is_empty() {
+                        split = split.split_off(delete_until);
+                    }
+
+                    split.append(&mut new_split);
+                }
+                split
+            }
+        }
     }
 }
