@@ -796,7 +796,7 @@ where
 /// ```
 pub struct StringOrVecToVec<'a, T, E> {
     separator: Pattern<'a>,
-    parser: Box<dyn Fn(&str) -> Result<T, E>>,
+    parser: Box<dyn FnMut(&str) -> Result<T, E>>,
 }
 
 /// Pattern on which a string can be split.
@@ -1018,7 +1018,7 @@ impl<'a, T, E> StringOrVecToVec<'a, T, E> {
     /// ```
     pub fn new(
         separator: impl Into<Pattern<'a>>,
-        parser: impl Fn(&str) -> Result<T, E> + 'static,
+        parser: impl FnMut(&str) -> Result<T, E> + 'static,
     ) -> Self {
         Self {
             separator: separator.into(),
@@ -1060,14 +1060,14 @@ impl<'a, T, E> StringOrVecToVec<'a, T, E> {
     ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
     /// }
     /// ```
-    pub fn with_parser(parser: impl Fn(&str) -> Result<T, E> + 'static) -> Self {
+    pub fn with_parser(parser: impl FnMut(&str) -> Result<T, E> + 'static) -> Self {
         Self::new(|c| c == ',', parser)
     }
 
     /// Creates the actual deserializer from this builder.
     pub fn to_deserializer<'de, D>(
         self,
-    ) -> impl Fn(D) -> Result<Vec<T>, <D as serde::Deserializer<'de>>::Error>
+    ) -> impl FnMut(D) -> Result<Vec<T>, <D as serde::Deserializer<'de>>::Error>
     where
         'a: 'de,
         D: serde::Deserializer<'de>,
@@ -1081,12 +1081,16 @@ impl<'a, T, E> StringOrVecToVec<'a, T, E> {
             Vec(Vec<T>),
         }
 
+        let StringOrVecToVec {
+            mut parser,
+            separator,
+        } = self;
+
         move |deserializer| match StringOrVec::<T>::deserialize(deserializer)? {
-            StringOrVec::String(s) => Ok(self
-                .separator
+            StringOrVec::String(s) => Ok(separator
                 .split(&s)
                 .into_iter()
-                .map(&self.parser)
+                .map(|x| (&mut parser)(x))
                 .collect::<Result<Vec<_>, _>>()
                 .map_err(serde::de::Error::custom)?),
             StringOrVec::Vec(v) => Ok(v),
