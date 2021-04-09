@@ -18,12 +18,11 @@ use serde::{Deserialize, Deserializer};
 ///     #[serde(deserialize_with = "deserialize_datetime_utc_from_milliseconds")]
 ///     time: DateTime<Utc>,
 /// }
-/// fn main() {
-///     let s = r#" { "time": "1519927261900" } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(a.time.timestamp(), 1519927261);
-///     assert_eq!(a.time.timestamp_subsec_millis(), 900);
-/// }
+///
+/// let s = r#" { "time": "1519927261900" } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.time.timestamp(), 1519927261);
+/// assert_eq!(a.time.timestamp_subsec_millis(), 900);
 /// ```
 #[cfg(feature = "chrono")]
 pub fn deserialize_datetime_utc_from_milliseconds<'de, D>(
@@ -57,15 +56,14 @@ where
 ///     #[serde(deserialize_with = "deserialize_number_from_string")]
 ///     number_from_string: u64,
 /// }
-/// fn main() {
-///     let s = r#" { "number_from_string": "123" } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(a.number_from_string, 123);
 ///
-///     let s = r#" { "number_from_string": 444 } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(a.number_from_string, 444);
-/// }
+/// let s = r#" { "number_from_string": "123" } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.number_from_string, 123);
+///
+/// let s = r#" { "number_from_string": 444 } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.number_from_string, 444);
 /// ```
 ///
 /// For making it work with strong types you must implement `FromStr` trait. It is quite simple.
@@ -94,16 +92,14 @@ where
 ///     #[serde(deserialize_with = "deserialize_number_from_string")]
 ///     int_id: IntId,
 /// }
-/// fn main() {
-///     let s = r#"{ "int_id": "123" }"#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(a.int_id.0, 123);
 ///
-///     let s = r#"{ "int_id": 444 }"#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(a.int_id.0, 444);
+/// let s = r#"{ "int_id": "123" }"#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.int_id.0, 123);
 ///
-/// }
+/// let s = r#"{ "int_id": 444 }"#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.int_id.0, 444);
 /// ```
 pub fn deserialize_number_from_string<'de, T, D>(deserializer: D) -> Result<T, D::Error>
 where
@@ -154,35 +150,34 @@ where
 /// fn serde_json_err(s: &str) {
 ///     assert!(serde_json::from_str::<MyStruct>(s).is_err());
 /// }
-/// fn main() {
-///     serde_qs_eq("option_num=1", Some(1.0));
-///     serde_qs_eq("option_num=-1", Some(-1.0));
-///     serde_qs_eq("option_num=0.1", Some(0.1));
-///     serde_qs_eq("option_num=-0.1", Some(-0.1));
-///     serde_qs_eq("option_num=", None);
-///     serde_qs_eq("option_num", None);
 ///
-///     serde_qs_err("option_num=true");
-///     serde_qs_err("option_num=a");
-///     serde_qs_err("option_num[a]=");
-///     serde_qs_err("option_num[]=");
+/// serde_qs_eq("option_num=1", Some(1.0));
+/// serde_qs_eq("option_num=-1", Some(-1.0));
+/// serde_qs_eq("option_num=0.1", Some(0.1));
+/// serde_qs_eq("option_num=-0.1", Some(-0.1));
+/// serde_qs_eq("option_num=", None);
+/// serde_qs_eq("option_num", None);
 ///
-///     serde_json_eq(r#" { "option_num": "1" } "#, Some(1.0));
-///     serde_json_eq(r#" { "option_num": "-1" } "#, Some(-1.0));
-///     serde_json_eq(r#" { "option_num": "0.1" } "#, Some(0.1));
-///     serde_json_eq(r#" { "option_num": "-0.1" } "#, Some(-0.1));
-///     serde_json_eq(r#" { "option_num": 1 } "#, Some(1.0));
-///     serde_json_eq(r#" { "option_num": -1 } "#, Some(-1.0));
-///     serde_json_eq(r#" { "option_num": 0.1 } "#, Some(0.1));
-///     serde_json_eq(r#" { "option_num": -0.1 } "#, Some(-0.1));
-///     serde_json_eq(r#" { "option_num": "" } "#, None);
-///     serde_json_eq(r#" { "option_num": null } "#, None);
+/// serde_qs_err("option_num=true");
+/// serde_qs_err("option_num=a");
+/// serde_qs_err("option_num[a]=");
+/// serde_qs_err("option_num[]=");
 ///
-///     serde_json_err(r#" { "option_num": true } "#);
-///     serde_json_err(r#" { "option_num": "a" } "#);
-///     serde_json_err(r#" { "option_num": {} } "#);
-///     serde_json_err(r#" { "option_num": [] } "#);
-/// }
+/// serde_json_eq(r#" { "option_num": "1" } "#, Some(1.0));
+/// serde_json_eq(r#" { "option_num": "-1" } "#, Some(-1.0));
+/// serde_json_eq(r#" { "option_num": "0.1" } "#, Some(0.1));
+/// serde_json_eq(r#" { "option_num": "-0.1" } "#, Some(-0.1));
+/// serde_json_eq(r#" { "option_num": 1 } "#, Some(1.0));
+/// serde_json_eq(r#" { "option_num": -1 } "#, Some(-1.0));
+/// serde_json_eq(r#" { "option_num": 0.1 } "#, Some(0.1));
+/// serde_json_eq(r#" { "option_num": -0.1 } "#, Some(-0.1));
+/// serde_json_eq(r#" { "option_num": "" } "#, None);
+/// serde_json_eq(r#" { "option_num": null } "#, None);
+///
+/// serde_json_err(r#" { "option_num": true } "#);
+/// serde_json_err(r#" { "option_num": "a" } "#);
+/// serde_json_err(r#" { "option_num": {} } "#);
+/// serde_json_err(r#" { "option_num": [] } "#);
 /// ```
 pub fn deserialize_option_number_from_string<'de, T, D>(
     deserializer: D,
@@ -258,10 +253,9 @@ wrap_option_number_from_string_fn!(
     ///     #[serde(deserialize_with = "deserialize_cell_option_number_from_string")]
     ///     v: Cell<Option<f32>>
     /// }
-    /// fn main() {
-    ///     let a = serde_qs::from_str::<MyStruct>("v=-0.1").unwrap();
-    ///     assert_eq!(a.v, Cell::new(Some(-0.1)));
-    /// }
+    ///
+    /// let a = serde_qs::from_str::<MyStruct>("v=-0.1").unwrap();
+    /// assert_eq!(a.v, Cell::new(Some(-0.1)));
     /// ```
     deserialize_cell_option_number_from_string,
     std::cell::Cell<Option<T>>
@@ -280,10 +274,9 @@ wrap_option_number_from_string_fn!(
     ///     #[serde(default, deserialize_with = "deserialize_ref_cell_option_number_from_string")]
     ///     v: RefCell<Option<f32>>
     /// }
-    /// fn main() {
-    ///     let a = serde_qs::from_str::<MyStruct>("v=-0.1").unwrap();
-    ///     assert_eq!(a.v, RefCell::new(Some(-0.1)));
-    /// }
+    ///
+    /// let a = serde_qs::from_str::<MyStruct>("v=-0.1").unwrap();
+    /// assert_eq!(a.v, RefCell::new(Some(-0.1)));
     /// ```
     deserialize_ref_cell_option_number_from_string,
     std::cell::RefCell<Option<T>>
@@ -302,10 +295,9 @@ wrap_option_number_from_string_fn!(
     ///     #[serde(default, deserialize_with = "deserialize_mutex_option_number_from_string")]
     ///     v: Mutex<Option<f32>>
     /// }
-    /// fn main() {
-    ///     let a = serde_qs::from_str::<MyStruct>("v=-0.1").unwrap();
-    ///     assert_eq!(*a.v.lock().unwrap(), Some(-0.1));
-    /// }
+    ///
+    /// let a = serde_qs::from_str::<MyStruct>("v=-0.1").unwrap();
+    /// assert_eq!(*a.v.lock().unwrap(), Some(-0.1));
     /// ```
     deserialize_mutex_option_number_from_string,
     std::sync::Mutex<Option<T>>
@@ -324,10 +316,9 @@ wrap_option_number_from_string_fn!(
     ///     #[serde(default, deserialize_with = "deserialize_rw_lock_option_number_from_string")]
     ///     v: RwLock<Option<f32>>
     /// }
-    /// fn main() {
-    ///     let a = serde_qs::from_str::<MyStruct>("v=-0.1").unwrap();
-    ///     assert_eq!(*a.v.read().unwrap(), Some(-0.1));
-    /// }
+    ///
+    /// let a = serde_qs::from_str::<MyStruct>("v=-0.1").unwrap();
+    /// assert_eq!(*a.v.read().unwrap(), Some(-0.1));
     /// ```
     deserialize_rw_lock_option_number_from_string,
     std::sync::RwLock<Option<T>>
@@ -476,54 +467,53 @@ mod tests {
 ///     #[serde(deserialize_with = "deserialize_bool_from_anything")]
 ///     boolean: bool,
 /// }
-/// fn main() {
-///     let s = r#"{ "boolean": 1.0 }"#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert!(a.boolean);
 ///
-///     let s = r#"{ "boolean": 0.0 }"#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert!(!a.boolean);
+/// let s = r#"{ "boolean": 1.0 }"#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert!(a.boolean);
 ///
-///     let s = r#"{ "boolean": 2.3 }"#;
-///     assert!(serde_json::from_str::<MyStruct>(s).is_err());
+/// let s = r#"{ "boolean": 0.0 }"#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert!(!a.boolean);
 ///
-///     let s = r#"{ "boolean": 1 }"#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert!(a.boolean);
+/// let s = r#"{ "boolean": 2.3 }"#;
+/// assert!(serde_json::from_str::<MyStruct>(s).is_err());
 ///
-///     let s = r#"{ "boolean": 0 }"#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert!(!a.boolean);
+/// let s = r#"{ "boolean": 1 }"#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert!(a.boolean);
 ///
-///     let s = r#"{ "boolean": 2 }"#;
-///     assert!(serde_json::from_str::<MyStruct>(s).is_err());
+/// let s = r#"{ "boolean": 0 }"#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert!(!a.boolean);
 ///
-///     let s = r#"{ "boolean": "1.0" }"#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert!(a.boolean);
+/// let s = r#"{ "boolean": 2 }"#;
+/// assert!(serde_json::from_str::<MyStruct>(s).is_err());
 ///
-///     let s = r#"{ "boolean": "0.0" }"#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert!(!a.boolean);
+/// let s = r#"{ "boolean": "1.0" }"#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert!(a.boolean);
 ///
-///     let s = r#"{ "boolean": "2.3" }"#;
-///     assert!(serde_json::from_str::<MyStruct>(s).is_err());
+/// let s = r#"{ "boolean": "0.0" }"#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert!(!a.boolean);
 ///
-///     let s = r#"{ "boolean": "1" }"#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert!(a.boolean);
+/// let s = r#"{ "boolean": "2.3" }"#;
+/// assert!(serde_json::from_str::<MyStruct>(s).is_err());
 ///
-///     let s = r#"{ "boolean": "0" }"#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert!(!a.boolean);
+/// let s = r#"{ "boolean": "1" }"#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert!(a.boolean);
 ///
-///     let s = r#"{ "boolean": "2" }"#;
-///     assert!(serde_json::from_str::<MyStruct>(s).is_err());
+/// let s = r#"{ "boolean": "0" }"#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert!(!a.boolean);
 ///
-///     let s = r#"{ "boolean": "foo" }"#;
-///     assert!(serde_json::from_str::<MyStruct>(s).is_err());
-/// }
+/// let s = r#"{ "boolean": "2" }"#;
+/// assert!(serde_json::from_str::<MyStruct>(s).is_err());
+///
+/// let s = r#"{ "boolean": "foo" }"#;
+/// assert!(serde_json::from_str::<MyStruct>(s).is_err());
 /// ```
 pub fn deserialize_bool_from_anything<'de, D>(deserializer: D) -> Result<bool, D::Error>
 where
@@ -600,19 +590,18 @@ where
 ///     #[serde(deserialize_with = "deserialize_string_from_number")]
 ///     number_as_string: String,
 /// }
-/// fn main() {
-///     let s = r#" { "number_as_string": "foo" } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(a.number_as_string, "foo");
 ///
-///     let s = r#" { "number_as_string": -13 } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(a.number_as_string, "-13");
+/// let s = r#" { "number_as_string": "foo" } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.number_as_string, "foo");
 ///
-///     let s = r#" { "number_as_string": 24.0034 } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(a.number_as_string, "24.0034");
-/// }
+/// let s = r#" { "number_as_string": -13 } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.number_as_string, "-13");
+///
+/// let s = r#" { "number_as_string": 24.0034 } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.number_as_string, "24.0034");
 /// ```
 pub fn deserialize_string_from_number<'de, D>(deserializer: D) -> Result<String, D::Error>
 where
@@ -647,18 +636,16 @@ where
 ///     null_as_default: u64,
 /// }
 ///
-/// fn main() {
-///     let s = r#" { "null_as_default": 42 } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(a.null_as_default, 42);
+/// let s = r#" { "null_as_default": 42 } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.null_as_default, 42);
 ///
-///     let s = r#" { "null_as_default": null } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(a.null_as_default, 0);
+/// let s = r#" { "null_as_default": null } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.null_as_default, 0);
 ///
-///     let s = r#" { "null_as_default": "wrong_type" } "#;
-///     assert!(serde_json::from_str::<MyStruct>(s).is_err());
-/// }
+/// let s = r#" { "null_as_default": "wrong_type" } "#;
+/// assert!(serde_json::from_str::<MyStruct>(s).is_err());
 /// ```
 pub fn deserialize_default_from_null<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
@@ -687,22 +674,20 @@ where
 ///     mandatory: u64,
 /// }
 ///
-/// fn main() {
-///     let s = r#" { "empty_as_default": { "mandatory": 42 } } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(a.empty_as_default.unwrap().mandatory, 42);
+/// let s = r#" { "empty_as_default": { "mandatory": 42 } } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.empty_as_default.unwrap().mandatory, 42);
 ///
-///     let s = r#" { "empty_as_default": null } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert!(a.empty_as_default.is_none());
+/// let s = r#" { "empty_as_default": null } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert!(a.empty_as_default.is_none());
 ///
-///     let s = r#" { "empty_as_default": {} } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert!(a.empty_as_default.is_none());
+/// let s = r#" { "empty_as_default": {} } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert!(a.empty_as_default.is_none());
 ///
-///     let s = r#" { "empty_as_default": { "unknown": 42 } } "#;
-///     assert!(serde_json::from_str::<MyStruct>(s).is_err());
-/// }
+/// let s = r#" { "empty_as_default": { "unknown": 42 } } "#;
+/// assert!(serde_json::from_str::<MyStruct>(s).is_err());
 /// ```
 pub fn deserialize_default_from_empty_object<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
@@ -742,15 +727,13 @@ where
 ///     list: Vec<i32>,
 /// }
 ///
-/// fn main() {
-///     let s = r#" { "list": "1,2,3,4" } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+/// let s = r#" { "list": "1,2,3,4" } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(&a.list, &[1, 2, 3, 4]);
 ///
-///     let s = r#" { "list": [1,2,3,4] } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(&a.list, &[1, 2, 3, 4]);
-/// }
+/// let s = r#" { "list": [1,2,3,4] } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(&a.list, &[1, 2, 3, 4]);
 /// ```
 pub fn deserialize_vec_from_string_or_vec<'de, T, D>(deserializer: D) -> Result<Vec<T>, D::Error>
 where
@@ -758,7 +741,7 @@ where
     T: FromStr + serde::Deserialize<'de> + 'static,
     <T as FromStr>::Err: std::fmt::Display,
 {
-    StringOrVecToVec::default().to_deserializer()(deserializer)
+    StringOrVecToVec::default().into_deserializer()(deserializer)
 }
 
 /// Builder to create a parser, that parses a separated string or a vec into a vec.
@@ -775,7 +758,7 @@ where
 ///     T: FromStr + serde::Deserialize<'de> + 'static,
 ///     <T as FromStr>::Err: std::fmt::Display,
 /// {
-///     StringOrVecToVec::default().to_deserializer()(deserializer)
+///     StringOrVecToVec::default().into_deserializer()(deserializer)
 /// }
 ///
 /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -784,15 +767,13 @@ where
 ///     list: Vec<i32>,
 /// }
 ///
-/// fn main() {
-///     let s = r#" { "list": "1,2,3,4" } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+/// let s = r#" { "list": "1,2,3,4" } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(&a.list, &[1, 2, 3, 4]);
 ///
-///     let s = r#" { "list": [1,2,3,4] } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(&a.list, &[1, 2, 3, 4]);
-/// }
+/// let s = r#" { "list": [1,2,3,4] } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(&a.list, &[1, 2, 3, 4]);
 /// ```
 pub struct StringOrVecToVec<'a, T, E> {
     separator: Pattern<'a>,
@@ -821,7 +802,7 @@ pub enum Pattern<'a> {
     ///     T: FromStr + serde::Deserialize<'de> + 'static,
     ///     <T as FromStr>::Err: std::fmt::Display,
     /// {
-    ///     StringOrVecToVec::with_separator(vec![Pattern::Char('+'), Pattern::Char('-')]).to_deserializer()(deserializer)
+    ///     StringOrVecToVec::with_separator(vec![Pattern::Char('+'), Pattern::Char('-')]).into_deserializer()(deserializer)
     /// }
     ///
     /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -830,15 +811,13 @@ pub enum Pattern<'a> {
     ///     list: Vec<i32>,
     /// }
     ///
-    /// fn main() {
-    ///     let s = r#" { "list": "1-2+3-4" } "#;
-    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
-    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    /// let s = r#" { "list": "1-2+3-4" } "#;
+    /// let a: MyStruct = serde_json::from_str(s).unwrap();
+    /// assert_eq!(&a.list, &[1, 2, 3, 4]);
     ///
-    ///     let s = r#" { "list": [1,2,3,4] } "#;
-    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
-    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
-    /// }
+    /// let s = r#" { "list": [1,2,3,4] } "#;
+    /// let a: MyStruct = serde_json::from_str(s).unwrap();
+    /// assert_eq!(&a.list, &[1, 2, 3, 4]);
     /// ```
     Multiple(Vec<Pattern<'a>>),
 }
@@ -873,7 +852,7 @@ impl<'a> From<Vec<Pattern<'a>>> for Pattern<'a> {
 ///     T: FromStr + serde::Deserialize<'de> + 'static,
 ///     <T as FromStr>::Err: std::fmt::Display,
 /// {
-///     StringOrVecToVec::with_separator(vec!['-', '+'].into_iter().collect::<Pattern>()).to_deserializer()(deserializer)
+///     StringOrVecToVec::with_separator(vec!['-', '+'].into_iter().collect::<Pattern>()).into_deserializer()(deserializer)
 /// }
 ///
 /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -882,15 +861,13 @@ impl<'a> From<Vec<Pattern<'a>>> for Pattern<'a> {
 ///     list: Vec<i32>,
 /// }
 ///
-/// fn main() {
-///     let s = r#" { "list": "1-2+3-4" } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+/// let s = r#" { "list": "1-2+3-4" } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(&a.list, &[1, 2, 3, 4]);
 ///
-///     let s = r#" { "list": [1,2,3,4] } "#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(&a.list, &[1, 2, 3, 4]);
-/// }
+/// let s = r#" { "list": [1,2,3,4] } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(&a.list, &[1, 2, 3, 4]);
 /// ```
 impl<'a> std::iter::FromIterator<Pattern<'a>> for Pattern<'a> {
     fn from_iter<I>(iter: I) -> Self
@@ -958,7 +935,7 @@ where
     ///     T: FromStr + serde::Deserialize<'de> + 'static,
     ///     <T as FromStr>::Err: std::fmt::Display,
     /// {
-    ///     StringOrVecToVec::with_separator(|c| c == '-' || c == '+').to_deserializer()(deserializer)
+    ///     StringOrVecToVec::with_separator(|c| c == '-' || c == '+').into_deserializer()(deserializer)
     /// }
     ///
     /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -967,15 +944,13 @@ where
     ///     list: Vec<i32>,
     /// }
     ///
-    /// fn main() {
-    ///     let s = r#" { "list": "1-2+3-4" } "#;
-    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
-    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    /// let s = r#" { "list": "1-2+3-4" } "#;
+    /// let a: MyStruct = serde_json::from_str(s).unwrap();
+    /// assert_eq!(&a.list, &[1, 2, 3, 4]);
     ///
-    ///     let s = r#" { "list": [1,2,3,4] } "#;
-    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
-    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
-    /// }
+    /// let s = r#" { "list": [1,2,3,4] } "#;
+    /// let a: MyStruct = serde_json::from_str(s).unwrap();
+    /// assert_eq!(&a.list, &[1, 2, 3, 4]);
     /// ```
     pub fn with_separator(separator: impl Into<Pattern<'a>>) -> Self {
         Self::new(separator, T::from_str)
@@ -997,7 +972,7 @@ impl<'a, T, E> StringOrVecToVec<'a, T, E> {
     ///     T: FromStr + serde::Deserialize<'de> + 'static,
     ///     <T as FromStr>::Err: std::fmt::Display,
     /// {
-    ///     StringOrVecToVec::new('-', |s| s.trim().parse()).to_deserializer()(deserializer)
+    ///     StringOrVecToVec::new('-', |s| s.trim().parse()).into_deserializer()(deserializer)
     /// }
     ///
     /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -1006,15 +981,13 @@ impl<'a, T, E> StringOrVecToVec<'a, T, E> {
     ///     list: Vec<i32>,
     /// }
     ///
-    /// fn main() {
-    ///     let s = r#" { "list": "1 - 2    -  3-    4    " } "#;
-    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
-    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    /// let s = r#" { "list": "1 - 2    -  3-    4    " } "#;
+    /// let a: MyStruct = serde_json::from_str(s).unwrap();
+    /// assert_eq!(&a.list, &[1, 2, 3, 4]);
     ///
-    ///     let s = r#" { "list": [1,2,3,4] } "#;
-    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
-    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
-    /// }
+    /// let s = r#" { "list": [1,2,3,4] } "#;
+    /// let a: MyStruct = serde_json::from_str(s).unwrap();
+    /// assert_eq!(&a.list, &[1, 2, 3, 4]);
     /// ```
     pub fn new(
         separator: impl Into<Pattern<'a>>,
@@ -1041,7 +1014,7 @@ impl<'a, T, E> StringOrVecToVec<'a, T, E> {
     ///     T: FromStr + serde::Deserialize<'de> + 'static,
     ///     <T as FromStr>::Err: std::fmt::Display,
     /// {
-    ///     StringOrVecToVec::with_parser(|s| s.trim().parse()).to_deserializer()(deserializer)
+    ///     StringOrVecToVec::with_parser(|s| s.trim().parse()).into_deserializer()(deserializer)
     /// }
     ///
     /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -1050,22 +1023,20 @@ impl<'a, T, E> StringOrVecToVec<'a, T, E> {
     ///     list: Vec<i32>,
     /// }
     ///
-    /// fn main() {
-    ///     let s = r#" { "list": "1 , 2    ,  3,    4    " } "#;
-    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
-    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
+    /// let s = r#" { "list": "1 , 2    ,  3,    4    " } "#;
+    /// let a: MyStruct = serde_json::from_str(s).unwrap();
+    /// assert_eq!(&a.list, &[1, 2, 3, 4]);
     ///
-    ///     let s = r#" { "list": [1,2,3,4] } "#;
-    ///     let a: MyStruct = serde_json::from_str(s).unwrap();
-    ///     assert_eq!(&a.list, &[1, 2, 3, 4]);
-    /// }
+    /// let s = r#" { "list": [1,2,3,4] } "#;
+    /// let a: MyStruct = serde_json::from_str(s).unwrap();
+    /// assert_eq!(&a.list, &[1, 2, 3, 4]);
     /// ```
     pub fn with_parser(parser: impl FnMut(&str) -> Result<T, E> + 'static) -> Self {
         Self::new(|c| c == ',', parser)
     }
 
     /// Creates the actual deserializer from this builder.
-    pub fn to_deserializer<'de, D>(
+    pub fn into_deserializer<'de, D>(
         self,
     ) -> impl FnMut(D) -> Result<Vec<T>, <D as serde::Deserializer<'de>>::Error>
     where

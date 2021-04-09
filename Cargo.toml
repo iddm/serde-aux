@@ -1,6 +1,6 @@
 [package]
 name = "serde-aux"
-version = "2.1.1"
+version = "2.2.0"
 authors = ["Victor Polevoy <maintainer@vpolevoy.com>"]
 description = "A serde crate's auxiliary library"
 readme = "README.md"
@@ -9,9 +9,6 @@ keywords = ["serde", "serialization", "deserialization"]
 edition = "2018"
 repository = "https://github.com/vityafx/serde-aux"
 documentation = "https://docs.rs/serde-aux"
-
-[badges]
-travis-ci = { repository = "vityafx/serde-aux" }
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

@@ -24,11 +24,9 @@ use serde::{Deserialize, Deserializer};
 ///     another_struct: AnotherStruct,
 /// }
 ///
-/// fn main() {
-///     let s = r#"{ "another_struct": { "AaA": "Test example" } }"#;
-///     let a: MyStruct = serde_json::from_str(s).unwrap();
-///     assert_eq!(a.another_struct.aaa, "Test example");
-/// }
+/// let s = r#"{ "another_struct": { "AaA": "Test example" } }"#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.another_struct.aaa, "Test example");
 /// ```
 pub fn deserialize_struct_case_insensitive<'de, T, D>(deserializer: D) -> Result<T, D::Error>
 where
