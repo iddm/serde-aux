@@ -198,7 +198,7 @@ where
     match NumericOrNull::<T>::deserialize(deserializer)? {
         NumericOrNull::Str(s) => match s {
             "" => Ok(None),
-            _ => T::from_str(&s).map(Some).map_err(serde::de::Error::custom),
+            _ => T::from_str(s).map(Some).map_err(serde::de::Error::custom),
         },
         NumericOrNull::FromStr(i) => Ok(Some(i)),
         NumericOrNull::Null => Ok(None),
