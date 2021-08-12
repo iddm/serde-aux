@@ -1,5 +1,5 @@
 # serde-aux
-[![Crates badge](https://meritbadge.herokuapp.com/serde-aux)](https://crates.io/crates/serde-aux) 
+[![Crates badge](https://img.shields.io/crates/v/serde_aux.svg)](https://crates.io/crates/serde-aux) 
 [![CI](https://github.com/vityafx/serde-aux/actions/workflows/ci.yml/badge.svg)](https://github.com/vityafx/serde-aux/actions/workflows/ci.yml)
 [![Documentation](https://docs.rs/serde-aux/badge.svg)](https://docs.rs/serde-aux)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
