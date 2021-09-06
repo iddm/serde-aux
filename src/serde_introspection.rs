@@ -33,7 +33,8 @@ use serde::de::{self, Deserialize, Deserializer, Visitor};
 /// assert_eq!(variants[1], "b");
 /// ```
 pub fn serde_introspect<'de, T>() -> &'static [&'static str]
-    where T: Deserialize<'de>
+where
+    T: Deserialize<'de>,
 {
     struct StructFieldsDeserializer<'a> {
         fields: &'a mut Option<&'static [&'static str]>,
@@ -43,13 +44,20 @@ pub fn serde_introspect<'de, T>() -> &'static [&'static str]
         type Error = serde::de::value::Error;
 
         fn deserialize_any<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
-            where V: Visitor<'de>
+        where
+            V: Visitor<'de>,
         {
             Err(de::Error::custom("I'm just here for the fields"))
         }
 
-        fn deserialize_struct<V>(self, _name: &'static str, fields: &'static [&'static str], _visitor: V) -> Result<V::Value, Self::Error>
-            where V: Visitor<'de>
+        fn deserialize_struct<V>(
+            self,
+            _name: &'static str,
+            fields: &'static [&'static str],
+            _visitor: V,
+        ) -> Result<V::Value, Self::Error>
+        where
+            V: Visitor<'de>,
         {
             *self.fields = Some(fields); // get the names of the deserialized fields
             Err(de::Error::custom("I'm just here for the fields"))
@@ -70,13 +78,20 @@ pub fn serde_introspect<'de, T>() -> &'static [&'static str]
         type Error = serde::de::value::Error;
 
         fn deserialize_any<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
-            where V: Visitor<'de>
+        where
+            V: Visitor<'de>,
         {
             Err(de::Error::custom("I'm just here for the fields"))
         }
 
-        fn deserialize_enum<V>(self, _name: &'static str, variants: &'static [&'static str], _visitor: V) -> Result<V::Value, Self::Error>
-            where V: Visitor<'de>
+        fn deserialize_enum<V>(
+            self,
+            _name: &'static str,
+            variants: &'static [&'static str],
+            _visitor: V,
+        ) -> Result<V::Value, Self::Error>
+        where
+            V: Visitor<'de>,
         {
             *self.variants = Some(variants);
             Err(de::Error::custom("I'm just here for the fields"))
@@ -90,8 +105,12 @@ pub fn serde_introspect<'de, T>() -> &'static [&'static str]
     }
 
     let mut serialized_names = None;
-    let _ = T::deserialize( EnumVariantsDeserializer{ variants: &mut serialized_names });
-    let _ = T::deserialize(StructFieldsDeserializer { fields: &mut serialized_names });
+    let _ = T::deserialize(EnumVariantsDeserializer {
+        variants: &mut serialized_names,
+    });
+    let _ = T::deserialize(StructFieldsDeserializer {
+        fields: &mut serialized_names,
+    });
     serialized_names.unwrap_or_default()
 }
 
@@ -106,7 +125,7 @@ mod tests {
             #[serde(rename = "a")]
             EnumA,
             #[serde(rename = "b")]
-            EnumB
+            EnumB,
         }
         #[derive(serde::Deserialize, Debug)]
         struct AnotherStruct {
@@ -117,7 +136,7 @@ mod tests {
             #[serde(rename = "c3")]
             ccc: u128,
             #[serde(rename = "d3")]
-            ddd: SomeEnum
+            ddd: SomeEnum,
         }
         let names = serde_introspect::<AnotherStruct>();
         assert_eq!(names[0], "a3");
@@ -133,7 +152,7 @@ mod tests {
             #[serde(rename = "a")]
             EnumA,
             #[serde(rename = "b")]
-            EnumB
+            EnumB,
         }
 
         let names = serde_introspect::<SomeEnum>();
