@@ -5,9 +5,6 @@
 #![deny(missing_docs)]
 #![deny(warnings)]
 
-#[macro_use]
-extern crate serde;
-
 /// Contains helpers for the containers.
 pub mod container_attributes;
 /// Contains helpers for the fields.
