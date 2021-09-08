@@ -9,7 +9,7 @@
 pub mod container_attributes;
 /// Contains helpers for the fields.
 pub mod field_attributes;
-/// Contains helpers to get serialization names for struct fields and enum variants as they are serialized.
+/// Contains helpers for accessing structure metadata (e.g. struct field names when serialized) using serde.
 pub mod serde_introspection;
 
 /// Prelude module, contains the most needed helpers from this library.
