@@ -2,7 +2,7 @@ use serde::de::{self, Deserialize, Deserializer, Visitor};
 
 /// Gets the serialization names for structs and enums.
 ///
-/// # Example:
+/// # Example
 ///
 /// ```rust
 /// use serde_aux::prelude::*;
