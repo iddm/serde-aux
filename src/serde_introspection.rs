@@ -116,6 +116,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    #![allow(dead_code)]
+
     use crate::prelude::serde_introspect;
 
     #[test]
