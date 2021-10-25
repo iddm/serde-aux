@@ -12,9 +12,9 @@ The library is free for any contributions. The goal of this crate is to improve 
 crate.
 
 ## Rust version
-The minimal rust version the library supports is `1.36`.
-Previous versions might still work but not guaranteed to work correctly.
+The minimal rust version the library supports:
+  - Up to version `3.0.0` (excluding) - rustc `1.36`.
+  - Since `3.0.0` - rustc `1.56`.
 
 ## License
-
 This project is [licensed under the MIT license](https://github.com/vityafx/serde-aux/blob/master/LICENSE).

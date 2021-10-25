@@ -58,22 +58,20 @@ where
 ///     Down = -1,
 /// });
 ///
-/// fn main() {
-///     let s = r#"1"#;
-///     let a: TestEnum = serde_json::from_str(s).unwrap();
-///     assert_eq!(a, TestEnum::Up);
+/// let s = r#"1"#;
+/// let a: TestEnum = serde_json::from_str(s).unwrap();
+/// assert_eq!(a, TestEnum::Up);
 ///
-///     let s = r#"0"#;
-///     let a: TestEnum = serde_json::from_str(s).unwrap();
-///     assert_eq!(a, TestEnum::None);
+/// let s = r#"0"#;
+/// let a: TestEnum = serde_json::from_str(s).unwrap();
+/// assert_eq!(a, TestEnum::None);
 ///
-///     let s = r#"-1"#;
-///     let a: TestEnum = serde_json::from_str(s).unwrap();
-///     assert_eq!(a, TestEnum::Down);
+/// let s = r#"-1"#;
+/// let a: TestEnum = serde_json::from_str(s).unwrap();
+/// assert_eq!(a, TestEnum::Down);
 ///
-///     let s = r#"5"#;
-///     assert!(serde_json::from_str::<TestEnum>(s).is_err());
-/// }
+/// let s = r#"5"#;
+/// assert!(serde_json::from_str::<TestEnum>(s).is_err());
 /// ```
 #[macro_export]
 macro_rules! enum_number_declare {
