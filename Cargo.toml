@@ -1,6 +1,6 @@
 [package]
 name = "serde-aux"
-version = "3.0.0"
+version = "3.0.1"
 authors = ["Victor Polevoy <maintainer@vpolevoy.com>"]
 description = "A serde crate's auxiliary library"
 readme = "README.md"
@@ -17,6 +17,7 @@ serde_json = "1"
 [dependencies.chrono]
 optional = true
 version = "0.4"
+default-features = false
 features = ["alloc", "std", "clock"]
 
 [dev-dependencies]
