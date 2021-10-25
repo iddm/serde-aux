@@ -5,7 +5,7 @@ on:
     - cron: '0 2 * * *'
 
 env:
-  minrust: 1.36.0
+  minrust: 1.56.0
 
 jobs:
   test:
