@@ -3,6 +3,32 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Deserializer};
 
+/// Allows a `bool` field to be defaulted to `true`, rather than the normal
+/// default of `false. Useful for fields where the default value should be `true`.
+///
+/// Example:
+///
+/// ```rust
+/// use serde_aux::prelude::*;
+///
+/// #[derive(serde::Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(default)]
+///     default_false: bool,
+///     #[serde(default = "default_as_true")]
+///     default_true: bool,
+/// }
+///
+/// let s = r#" { } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert!(!a.default_false);
+/// assert!(a.default_true);
+/// ```
+#[inline]
+pub fn default_as_true() -> bool {
+    true
+}
+
 /// Deserializes a `chrono::DateTime<Utc>` from a milliseconds time stamp. Useful when the data is coming from a number
 /// which is not a seconds time stamp but milliseconds one. It also handles the string to number conversion if the
 /// data was passed as a string with number inside like **"1519927261900"**.
