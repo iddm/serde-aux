@@ -15,7 +15,7 @@ use serde::{Deserialize, Deserializer};
 /// struct MyStruct {
 ///     #[serde(default)]
 ///     default_false: bool,
-///     #[serde(default = "default_as_true")]
+///     #[serde(default = "bool_true")]
 ///     default_true: bool,
 /// }
 ///
@@ -25,7 +25,7 @@ use serde::{Deserialize, Deserializer};
 /// assert!(a.default_true);
 /// ```
 #[inline]
-pub fn default_as_true() -> bool {
+pub fn bool_true() -> bool {
     true
 }
 
