@@ -21,7 +21,7 @@ default-features = false
 features = ["alloc", "std", "clock"]
 
 [dev-dependencies]
-serde_qs = "0.9"
+serde_qs = "0.10"
 
 [features]
 default = ["chrono"]
