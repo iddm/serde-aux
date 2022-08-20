@@ -803,8 +803,12 @@ where
 /// ```
 pub struct StringOrVecToVec<'a, T, E> {
     separator: Pattern<'a>,
-    parser: Box<dyn FnMut(&str) -> Result<T, E>>,
+    parser: Box<StringOrVecParser<T, E>>,
 }
+
+/// A functor returning a [`Result`] of parsing a string into a vector
+/// of objects of type `T`.
+pub type StringOrVecParser<T, E> = dyn FnMut(&str) -> Result<T, E>;
 
 /// Pattern on which a string can be split.
 pub enum Pattern<'a> {
