@@ -8,6 +8,7 @@
 /// Contains helpers for the containers.
 pub mod container_attributes;
 /// Contains helpers for the fields.
+#[macro_use]
 pub mod field_attributes;
 /// Contains helpers for accessing structure metadata (e.g. struct field names when serialized) using serde.
 pub mod serde_introspection;

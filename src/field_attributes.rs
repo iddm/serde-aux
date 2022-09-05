@@ -770,6 +770,71 @@ where
     StringOrVecToVec::default().into_deserializer()(deserializer)
 }
 
+/// Create a parser quickly.
+///
+/// ```
+/// use serde_aux::prelude::*;
+/// use std::str::FromStr;
+///
+/// serde_aux::StringOrVecToVecParser!(parse_between_commas, |c| { c == ',' }, true);
+///
+/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "parse_between_commas")]
+///     list: Vec<i32>,
+/// }
+///
+/// let s = r#" { "list": "1,2,3,4" } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(&a.list, &[1, 2, 3, 4]);
+///
+/// let s = r#" { "list": [1,2,3,4] } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(&a.list, &[1, 2, 3, 4]);
+///
+///
+/// serde_aux::StringOrVecToVecParser!(u8, parse_hex_with_spaces, ' ', |s| { u8::from_str_radix(s, 16) }, true);
+///
+/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// struct MyStructHex {
+///     #[serde(deserialize_with = "parse_hex_with_spaces")]
+///     list: Vec<u8>,
+/// }
+///
+/// let s = r#" { "list": "a1 b2 c3 d4 " } "#;
+/// let a: MyStructHex = serde_json::from_str(s).unwrap();
+/// assert_eq!(&a.list, &[0xa1, 0xb2, 0xc3, 0xd4]);
+///
+/// let s = r#" { "list": "a1 b2 c3  d4   " } "#;
+/// let a: MyStructHex = serde_json::from_str(s).unwrap();
+/// assert_eq!(&a.list, &[0xa1, 0xb2, 0xc3, 0xd4]);
+/// ```
+#[macro_export]
+macro_rules! StringOrVecToVecParser {
+    ($name:ident, $separator:expr, $skip_empty:expr) => {
+        fn $name<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+            T: FromStr + serde::Deserialize<'de> + 'static,
+            <T as FromStr>::Err: std::fmt::Display,
+        {
+            let mut parser = $crate::field_attributes::StringOrVecToVec::with_separator($separator);
+            parser.skip_empty($skip_empty);
+            parser.into_deserializer()(deserializer)
+        }
+    };
+
+    ($t:ty, $name:ident, $pattern:expr, $converter:expr, $skip_empty:expr) => {
+        fn $name<'de, D>(deserializer: D) -> Result<Vec<$t>, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            $crate::field_attributes::StringOrVecToVec::new($pattern, $converter, $skip_empty)
+                .into_deserializer()(deserializer)
+        }
+    };
+}
+
 /// Builder to create a parser, that parses a separated string or a vec into a vec.
 ///
 /// # Example:
@@ -800,10 +865,10 @@ where
 /// let s = r#" { "list": [1,2,3,4] } "#;
 /// let a: MyStruct = serde_json::from_str(s).unwrap();
 /// assert_eq!(&a.list, &[1, 2, 3, 4]);
-/// ```
 pub struct StringOrVecToVec<'a, T, E> {
     separator: Pattern<'a>,
     parser: Box<StringOrVecParser<T, E>>,
+    skip_empty: bool,
 }
 
 /// A functor returning a [`Result`] of parsing a string into a vector
@@ -941,7 +1006,7 @@ where
     <T as FromStr>::Err: std::fmt::Display,
 {
     fn default() -> Self {
-        Self::new(|c| c == ',', T::from_str)
+        Self::new(|c| c == ',', T::from_str, false)
     }
 }
 
@@ -983,7 +1048,39 @@ where
     /// assert_eq!(&a.list, &[1, 2, 3, 4]);
     /// ```
     pub fn with_separator(separator: impl Into<Pattern<'a>>) -> Self {
-        Self::new(separator, T::from_str)
+        Self::new(separator, T::from_str, false)
+    }
+
+    /// Sets the flag to skip empty separations.
+    ///
+    /// ```rust
+    /// use serde_aux::prelude::*;
+    /// use std::str::FromStr;
+    ///
+    /// fn parser_skip_empty<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>
+    /// where
+    ///     D: serde::Deserializer<'de>,
+    ///     T: FromStr + serde::Deserialize<'de> + 'static,
+    ///     <T as FromStr>::Err: std::fmt::Display,
+    /// {
+    ///     let mut parser = StringOrVecToVec::with_separator(|c| c == '-' || c == '+');
+    ///     parser.skip_empty(true);
+    ///     parser.into_deserializer()(deserializer)
+    /// }
+    ///
+    /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+    /// struct MyStructSkipEmpty {
+    ///     #[serde(deserialize_with = "parser_skip_empty")]
+    ///     list: Vec<i32>,
+    /// }
+    ///
+    /// let s = r#" { "list": "1-2+3-4--++--" } "#;
+    /// let a: MyStructSkipEmpty = serde_json::from_str(s).unwrap();
+    /// assert_eq!(&a.list, &[1, 2, 3, 4]);
+    /// ```
+    pub fn skip_empty(&mut self, skip_empty: bool) -> &mut Self {
+        self.skip_empty = skip_empty;
+        self
     }
 }
 
@@ -1002,7 +1099,7 @@ impl<'a, T, E> StringOrVecToVec<'a, T, E> {
     ///     T: FromStr + serde::Deserialize<'de> + 'static,
     ///     <T as FromStr>::Err: std::fmt::Display,
     /// {
-    ///     StringOrVecToVec::new('-', |s| s.trim().parse()).into_deserializer()(deserializer)
+    ///     StringOrVecToVec::new('-', |s| s.trim().parse(), false).into_deserializer()(deserializer)
     /// }
     ///
     /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -1022,10 +1119,12 @@ impl<'a, T, E> StringOrVecToVec<'a, T, E> {
     pub fn new(
         separator: impl Into<Pattern<'a>>,
         parser: impl FnMut(&str) -> Result<T, E> + 'static,
+        skip_empty: bool,
     ) -> Self {
         Self {
             separator: separator.into(),
             parser: Box::new(parser),
+            skip_empty,
         }
     }
 
@@ -1062,7 +1161,7 @@ impl<'a, T, E> StringOrVecToVec<'a, T, E> {
     /// assert_eq!(&a.list, &[1, 2, 3, 4]);
     /// ```
     pub fn with_parser(parser: impl FnMut(&str) -> Result<T, E> + 'static) -> Self {
-        Self::new(|c| c == ',', parser)
+        Self::new(|c| c == ',', parser, false)
     }
 
     /// Creates the actual deserializer from this builder.
@@ -1085,12 +1184,19 @@ impl<'a, T, E> StringOrVecToVec<'a, T, E> {
         let StringOrVecToVec {
             mut parser,
             separator,
+            skip_empty,
         } = self;
 
         move |deserializer| match StringOrVec::<T>::deserialize(deserializer)? {
             StringOrVec::String(s) => Ok(separator
                 .split(&s)
                 .into_iter()
+                .filter(|s| {
+                    if skip_empty && s.is_empty() {
+                        return false;
+                    }
+                    true
+                })
                 .map(&mut parser)
                 .collect::<Result<Vec<_>, _>>()
                 .map_err(serde::de::Error::custom)?),
