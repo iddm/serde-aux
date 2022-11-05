@@ -93,18 +93,18 @@ where
 /// ```
 #[cfg(feature = "chrono")]
 pub fn deserialize_datetime_utc_from_seconds<'de, D>(
-        deserializer: D,
-        ) -> Result<chrono::DateTime<chrono::Utc>, D::Error>
+    deserializer: D,
+) -> Result<chrono::DateTime<chrono::Utc>, D::Error>
 where
-D: Deserializer<'de>,
+    D: Deserializer<'de>,
 {
     use chrono::prelude::*;
 
     let seconds = deserialize_number_from_string::<i64, D>(deserializer)?;
 
     Ok(DateTime::<Utc>::from_utc(
-            NaiveDateTime::from_timestamp(seconds, 0),
-    Utc,
+        NaiveDateTime::from_timestamp(seconds, 0),
+        Utc,
     ))
 }
 
