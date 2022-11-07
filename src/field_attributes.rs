@@ -70,6 +70,44 @@ where
     ))
 }
 
+/// Deserializes a `chrono::DateTime<Utc>` from a seconds time stamp.
+/// It also handles the string to number conversion if the
+/// data was passed as a string with number inside like **"1519927261"**.
+///
+/// # Example:
+///
+/// ```rust
+/// use chrono::prelude::*;
+/// use serde_aux::prelude::*;
+///
+/// #[derive(serde::Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "deserialize_datetime_utc_from_seconds")]
+///     time: DateTime<Utc>,
+/// }
+///
+/// let s = r#" { "time": "1519927261" } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.time.timestamp(), 1519927261);
+/// assert_eq!(a.time.timestamp_subsec_millis(), 0);
+/// ```
+#[cfg(feature = "chrono")]
+pub fn deserialize_datetime_utc_from_seconds<'de, D>(
+    deserializer: D,
+) -> Result<chrono::DateTime<chrono::Utc>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use chrono::prelude::*;
+
+    let seconds = deserialize_number_from_string::<i64, D>(deserializer)?;
+
+    Ok(DateTime::<Utc>::from_utc(
+        NaiveDateTime::from_timestamp(seconds, 0),
+        Utc,
+    ))
+}
+
 /// Deserializes a number from string or a number.
 ///
 /// # Example:
