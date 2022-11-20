@@ -1,7 +1,9 @@
 use std::fmt::Display;
 use std::str::FromStr;
 
-use serde::{de::Error, Deserialize, Deserializer};
+#[cfg(feature = "chrono")]
+use serde::de::Error;
+use serde::{Deserialize, Deserializer};
 
 /// Allows a `bool` field to be defaulted to `true`, rather than the normal
 /// default of `false. Useful for fields where the default value should be `true`.
@@ -50,7 +52,7 @@ pub fn bool_true() -> bool {
 /// assert_eq!(a.time.timestamp(), 1519927261);
 /// assert_eq!(a.time.timestamp_subsec_millis(), 900);
 /// ```
-// #[cfg(feature = "chrono")]
+#[cfg(feature = "chrono")]
 pub fn deserialize_datetime_utc_from_milliseconds<'de, D>(
     deserializer: D,
 ) -> Result<chrono::DateTime<chrono::Utc>, D::Error>
