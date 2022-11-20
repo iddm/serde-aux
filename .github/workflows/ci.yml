@@ -60,6 +60,10 @@ jobs:
         if: matrix.features == ''
         run: cargo test --all-features
 
+      - name: Build with no default features
+        if: matrix.features == ''
+        run: cargo build --no-default-features
+
   clippy:
     name: Run clippy
     runs-on: ubuntu-latest
