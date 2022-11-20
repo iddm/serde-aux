@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use std::str::FromStr;
 
-use serde::{Deserialize, Deserializer};
+use serde::{de::Error, Deserialize, Deserializer};
 
 /// Allows a `bool` field to be defaulted to `true`, rather than the normal
 /// default of `false. Useful for fields where the default value should be `true`.
@@ -50,7 +50,7 @@ pub fn bool_true() -> bool {
 /// assert_eq!(a.time.timestamp(), 1519927261);
 /// assert_eq!(a.time.timestamp_subsec_millis(), 900);
 /// ```
-#[cfg(feature = "chrono")]
+// #[cfg(feature = "chrono")]
 pub fn deserialize_datetime_utc_from_milliseconds<'de, D>(
     deserializer: D,
 ) -> Result<chrono::DateTime<chrono::Utc>, D::Error>
@@ -65,7 +65,8 @@ where
     let nanos = millis * 1_000_000;
 
     Ok(DateTime::<Utc>::from_utc(
-        NaiveDateTime::from_timestamp(seconds, nanos),
+        NaiveDateTime::from_timestamp_opt(seconds, nanos)
+            .ok_or_else(|| D::Error::custom("Couldn't parse the timestamp"))?,
         Utc,
     ))
 }
@@ -103,7 +104,8 @@ where
     let seconds = deserialize_number_from_string::<i64, D>(deserializer)?;
 
     Ok(DateTime::<Utc>::from_utc(
-        NaiveDateTime::from_timestamp(seconds, 0),
+        NaiveDateTime::from_timestamp_opt(seconds, 0)
+            .ok_or_else(|| D::Error::custom("Couldn't parse the timestamp"))?,
         Utc,
     ))
 }
