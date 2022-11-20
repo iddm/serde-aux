@@ -50,7 +50,7 @@ pub fn bool_true() -> bool {
 /// assert_eq!(a.time.timestamp(), 1519927261);
 /// assert_eq!(a.time.timestamp_subsec_millis(), 900);
 /// ```
-// #[cfg(feature = "chrono")]
+#[cfg(feature = "chrono")]
 pub fn deserialize_datetime_utc_from_milliseconds<'de, D>(
     deserializer: D,
 ) -> Result<chrono::DateTime<chrono::Utc>, D::Error>
