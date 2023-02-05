@@ -637,7 +637,8 @@ where
                 }
             } else {
                 Err(serde::de::Error::custom(format!(
-                    "Could not parse boolean from a string: {string}"
+                    "Could not parse boolean from a string: {}",
+                    string
                 )))
             }
         }
