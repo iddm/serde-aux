@@ -3,6 +3,7 @@
 [![CI](https://github.com/vityafx/serde-aux/actions/workflows/ci.yml/badge.svg)](https://github.com/vityafx/serde-aux/actions/workflows/ci.yml)
 [![Documentation](https://docs.rs/serde-aux/badge.svg)](https://docs.rs/serde-aux)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/vityafx)](https://github.com/sponsors/vityafx)
 
 An auxiliary library for the [`serde`](https://github.com/serde-rs/serde) crate.
 
