@@ -52,7 +52,7 @@ where
 /// # Example
 ///
 /// ```rust
-/// serde_aux::enum_number_declare!(TestEnum {
+/// serde_aux::enum_number_declare!(pub TestEnum {
 ///     Up = 1,
 ///     None = 0,
 ///     Down = -1,
@@ -75,9 +75,9 @@ where
 /// ```
 #[macro_export]
 macro_rules! enum_number_declare {
-    ($name:ident { $($variant:ident = $value:expr, )* }) => {
+    ($visibility:vis $name:ident { $($variant:ident = $value:expr, )* }) => {
         #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
-        pub enum $name {
+        $visibility enum $name {
             $($variant = $value,)*
         }
 
