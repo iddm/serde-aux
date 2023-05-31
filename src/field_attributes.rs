@@ -6,7 +6,7 @@ use serde::de::Error;
 use serde::{Deserialize, Deserializer};
 
 /// Allows a `bool` field to be defaulted to `true`, rather than the normal
-/// default of `false. Useful for fields where the default value should be `true`.
+/// default of `false`. Useful for fields where the default value should be `true`.
 ///
 /// Example:
 ///
