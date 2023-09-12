@@ -16,6 +16,7 @@ crate.
 The minimal rust version the library supports:
   - Up to version `3.0.0` (excluding) - rustc `1.36`.
   - Since `3.0.0` - rustc `1.56`.
+  - Since `4.3.0` - rustc `1.57`.
 
 ## License
 This project is [licensed under the MIT license](https://github.com/vityafx/serde-aux/blob/master/LICENSE).
