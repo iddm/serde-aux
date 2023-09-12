@@ -66,10 +66,9 @@ where
     let millis = (number % 1000) as u32;
     let nanos = millis * 1_000_000;
 
-    Ok(DateTime::<Utc>::from_utc(
-        NaiveDateTime::from_timestamp_opt(seconds, nanos)
+    Ok(Utc.from_utc_datetime(
+        &NaiveDateTime::from_timestamp_opt(seconds, nanos)
             .ok_or_else(|| D::Error::custom("Couldn't parse the timestamp"))?,
-        Utc,
     ))
 }
 
@@ -105,10 +104,9 @@ where
 
     let seconds = deserialize_number_from_string::<i64, D>(deserializer)?;
 
-    Ok(DateTime::<Utc>::from_utc(
-        NaiveDateTime::from_timestamp_opt(seconds, 0)
+    Ok(Utc.from_utc_datetime(
+        &NaiveDateTime::from_timestamp_opt(seconds, 0)
             .ok_or_else(|| D::Error::custom("Couldn't parse the timestamp"))?,
-        Utc,
     ))
 }
 
