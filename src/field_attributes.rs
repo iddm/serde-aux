@@ -31,6 +31,30 @@ pub fn bool_true() -> bool {
     true
 }
 
+/// Allows compact setting `u16` field default value.
+///
+/// # Example
+/// ```rust
+/// use serde_aux::prelude::*;
+///
+/// #[derive(serde::Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(default = "default_u16::<30>")]
+///     default_30: u16,
+///     #[serde(default)]
+///     default_zero: u16,
+/// }
+///
+/// let s = r#"{}"#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.default_30, 30);
+/// assert_eq!(a.default_zero, 0);
+/// ```
+#[inline]
+pub const fn default_u16<const V: u16>() -> u16 {
+    V
+}
+
 
 /// Allows compact setting `u32` field default value.
 ///
@@ -40,7 +64,7 @@ pub fn bool_true() -> bool {
 ///
 /// #[derive(serde::Deserialize, Debug)]
 /// struct MyStruct {
-///     #[serde(default = default_u32::<30>)]
+///     #[serde(default = "default_u32::<30>")]
 ///     default_30: u32,
 ///     #[serde(default)]
 ///     default_zero: u32,
@@ -64,7 +88,7 @@ pub const fn default_u32<const V: u32>() -> u32 {
 ///
 /// #[derive(serde::Deserialize, Debug)]
 /// struct MyStruct {
-///     #[serde(default = default_u64::<30>)]
+///     #[serde(default = "default_u64::<30>")]
 ///     default_30: u64,
 ///     #[serde(default)]
 ///     default_zero: u64,
@@ -80,6 +104,30 @@ pub const fn default_u64<const V: u64>() -> u64 {
     V
 }
 
+/// Allows compact setting `i16` field default value.
+///
+/// # Example
+/// ```rust
+/// use serde_aux::prelude::*;
+///
+/// #[derive(serde::Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(default = "default_i16::<-30>")]
+///     default_30: i16,
+///     #[serde(default)]
+///     default_zero: i16,
+/// }
+///
+/// let s = r#"{}"#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.default_30, -30);
+/// assert_eq!(a.default_zero, 0);
+/// ```
+#[inline]
+pub const fn default_i16<const V: i16>() -> i16 {
+    V
+}
+
 /// Allows compact setting `i32` field default value.
 ///
 /// # Example
@@ -88,7 +136,7 @@ pub const fn default_u64<const V: u64>() -> u64 {
 ///
 /// #[derive(serde::Deserialize, Debug)]
 /// struct MyStruct {
-///     #[serde(default = default_i32::<-30>)]
+///     #[serde(default = "default_i32::<-30>")]
 ///     default_30: i32,
 ///     #[serde(default)]
 ///     default_zero: i32,
@@ -112,7 +160,7 @@ pub const fn default_i32<const V: i32>() -> i32 {
 ///
 /// #[derive(serde::Deserialize, Debug)]
 /// struct MyStruct {
-///     #[serde(default = default_i64::<-30>)]
+///     #[serde(default = "default_i64::<-30>")]
 ///     default_30: i64,
 ///     #[serde(default)]
 ///     default_zero: i64,
