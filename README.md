@@ -1,9 +1,9 @@
 # serde-aux
 [![Crates badge](https://img.shields.io/crates/v/serde_aux.svg)](https://crates.io/crates/serde-aux) 
-[![CI](https://github.com/vityafx/serde-aux/actions/workflows/ci.yml/badge.svg)](https://github.com/vityafx/serde-aux/actions/workflows/ci.yml)
+[![CI](https://github.com/iddm/serde-aux/actions/workflows/ci.yml/badge.svg)](https://github.com/iddm/serde-aux/actions/workflows/ci.yml)
 [![Documentation](https://docs.rs/serde-aux/badge.svg)](https://docs.rs/serde-aux)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![GitHub Sponsors](https://img.shields.io/github/sponsors/vityafx)](https://github.com/sponsors/vityafx)
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/iddm)](https://github.com/sponsors/iddm)
 
 An auxiliary library for the [`serde`](https://github.com/serde-rs/serde) crate.
 
@@ -19,4 +19,4 @@ The minimal rust version the library supports:
   - Since `4.3.0` - rustc `1.57`.
 
 ## License
-This project is [licensed under the MIT license](https://github.com/vityafx/serde-aux/blob/master/LICENSE).
+This project is [licensed under the MIT license](https://github.com/iddm/serde-aux/blob/master/LICENSE).
