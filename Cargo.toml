@@ -1,6 +1,6 @@
 [package]
 name = "serde-aux"
-version = "4.3.0"
+version = "4.3.1"
 authors = ["Victor Polevoy <maintainer@vpolevoy.com>"]
 description = "A serde crate's auxiliary library"
 readme = "README.md"
@@ -8,7 +8,7 @@ license = "MIT"
 keywords = ["serde", "serialization", "deserialization"]
 edition = "2021"
 rust-version = "1.57"
-repository = "https://github.com/vityafx/serde-aux"
+repository = "https://github.com/iddm/serde-aux"
 documentation = "https://docs.rs/serde-aux"
 
 [dependencies]
