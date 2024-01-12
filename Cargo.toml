@@ -1,6 +1,6 @@
 [package]
 name = "serde-aux"
-version = "4.3.1"
+version = "4.4.0"
 authors = ["Victor Polevoy <maintainer@vpolevoy.com>"]
 description = "A serde crate's auxiliary library"
 readme = "README.md"
@@ -22,7 +22,7 @@ default-features = false
 features = ["alloc", "std", "clock"]
 
 [dev-dependencies]
-serde_qs = "0.10"
+serde_qs = ">=0.10"
 
 [features]
 default = ["chrono"]
