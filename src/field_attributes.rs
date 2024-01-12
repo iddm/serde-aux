@@ -55,7 +55,6 @@ pub const fn default_u16<const V: u16>() -> u16 {
     V
 }
 
-
 /// Allows compact setting `u32` field default value.
 ///
 /// # Example
