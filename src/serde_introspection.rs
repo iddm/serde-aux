@@ -114,11 +114,66 @@ where
     serialized_names.unwrap_or_default()
 }
 
+/// Get the default record for a struct implementing the `serde::Deserialize`
+/// trait.
+///
+/// This helper function is useful in particular when the `#[serde(default =
+/// "path")]` field attribute is used to customize the default record
+/// definition, as it avoids the need to implement the `Default` trait manually
+/// for the defined struct, paying attention to keep it aligned with Serde's
+/// attributes configuration.
+///
+/// # Example
+///
+/// ```rust
+/// use serde_aux::prelude::*;
+///
+/// #[derive(serde::Deserialize, PartialEq, Debug)]
+/// struct Record {
+///     #[serde(default = "default_string")]
+///     label: String,
+///     #[serde(default = "default_f64")]
+///     value1: f64,
+///     #[serde(default)]
+///     value2: f64,
+///     #[serde(skip)]
+///     foo: bool,
+/// }
+///
+/// fn default_string() -> String {
+///     String::from("default")
+/// }
+///
+/// fn default_f64() -> f64 {
+///     1.0
+/// }
+///
+/// let empty_record = get_default_serde_record::<Record>().unwrap();
+/// assert_eq!(
+///     empty_record,
+///     Record {
+///         label: String::from("default"),
+///         value1: 1.0,
+///         value2: 0.0,
+///         foo: false
+///     }
+/// );
+/// ```
+pub fn get_default_serde_record<'de, T>() -> Result<T, serde::de::value::Error>
+where
+    T: Deserialize<'de>,
+{
+    let empty_data = std::iter::empty::<((), ())>();
+    let empty_deserializer =
+        serde::de::value::MapDeserializer::<_, serde::de::value::Error>::new(empty_data);
+    T::deserialize(empty_deserializer)
+}
+
 #[cfg(test)]
 mod tests {
     #![allow(dead_code)]
 
-    use crate::prelude::serde_introspect;
+    use crate::prelude::{get_default_serde_record, serde_introspect};
 
     #[test]
     fn serde_introspect_given_struct_introspect_serialization_names() {
@@ -160,5 +215,39 @@ mod tests {
         let names = serde_introspect::<SomeEnum>();
         assert_eq!(names[0], "a");
         assert_eq!(names[1], "b");
+    }
+
+    #[test]
+    fn get_default_serde_record_from_struct() {
+        #[derive(serde::Deserialize, PartialEq, Debug)]
+        struct Record {
+            #[serde(default = "default_string")]
+            label: String,
+            #[serde(default = "default_f64")]
+            value1: f64,
+            #[serde(default)]
+            value2: f64,
+            #[serde(skip)]
+            foo: bool,
+        }
+
+        fn default_string() -> String {
+            String::from("default")
+        }
+
+        fn default_f64() -> f64 {
+            1.0
+        }
+
+        let empty_record = get_default_serde_record::<Record>().unwrap();
+        assert_eq!(
+            empty_record,
+            Record {
+                label: String::from("default"),
+                value1: 1.0,
+                value2: 0.0,
+                foo: false
+            }
+        );
     }
 }
