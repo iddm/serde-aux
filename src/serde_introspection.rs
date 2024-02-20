@@ -114,11 +114,53 @@ where
     serialized_names.unwrap_or_default()
 }
 
+/// Get struct default empty record.
+///
+/// # Example
+///
+/// ```rust
+/// use serde_aux::prelude::*;
+///
+/// #[derive(serde::Deserialize, PartialEq, Debug)]
+/// struct Record {
+///     #[serde(default = "default_string")]
+///     label: String,
+///     #[serde(default = "default_f64")]
+///     value: f64,
+/// }
+///
+/// fn default_string() -> String {
+///     String::from("default")
+/// }
+///
+/// fn default_f64() -> f64 {
+///     1.0
+/// }
+///
+/// let empty_record = get_default_empty_record::<Record>().unwrap();
+/// assert_eq!(
+///     empty_record,
+///     Record {
+///         label: String::from("default"),
+///         value: 1.0
+///     }
+/// );
+/// ```
+pub fn get_default_empty_record<'de, T>() -> Result<T, serde::de::value::Error>
+where
+    T: Deserialize<'de>,
+{
+    let empty_data = std::iter::empty::<((), ())>();
+    let empty_deserializer =
+        serde::de::value::MapDeserializer::<_, serde::de::value::Error>::new(empty_data);
+    T::deserialize(empty_deserializer)
+}
+
 #[cfg(test)]
 mod tests {
     #![allow(dead_code)]
 
-    use crate::prelude::serde_introspect;
+    use crate::prelude::{get_default_empty_record, serde_introspect};
 
     #[test]
     fn serde_introspect_given_struct_introspect_serialization_names() {
@@ -160,5 +202,33 @@ mod tests {
         let names = serde_introspect::<SomeEnum>();
         assert_eq!(names[0], "a");
         assert_eq!(names[1], "b");
+    }
+
+    #[test]
+    fn get_default_empty_record_from_struct() {
+        #[derive(serde::Deserialize, PartialEq, Debug)]
+        struct Record {
+            #[serde(default = "default_string")]
+            label: String,
+            #[serde(default = "default_f64")]
+            value: f64,
+        }
+
+        fn default_string() -> String {
+            String::from("default")
+        }
+
+        fn default_f64() -> f64 {
+            1.0
+        }
+
+        let empty_record = get_default_empty_record::<Record>().unwrap();
+        assert_eq!(
+            empty_record,
+            Record {
+                label: String::from("default"),
+                value: 1.0
+            }
+        );
     }
 }
