@@ -826,6 +826,166 @@ where
     StringOrVecToVec::default().into_deserializer()(deserializer)
 }
 
+/// Deserialize to primary or fallback type.
+///
+/// This helper function will attempt to deserialize to the primary type first,
+/// and if that fails it will attempt to deserialize to the fallback type. If
+/// both fail, it will return an error.
+///
+/// # Example:
+///
+/// ```rust
+/// use serde_aux::prelude::*;
+///
+/// #[derive(serde::Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "deserialize_to_type_or_fallback")]
+///     i64_or_f64: Result<i64, f64>,
+///     #[serde(deserialize_with = "deserialize_to_type_or_fallback")]
+///     f64_or_string: Result<f64, String>,
+/// }
+///
+/// let s = r#" { "i64_or_f64": 1, "f64_or_string": 1 } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.i64_or_f64, Ok(1));
+/// assert_eq!(a.f64_or_string, Ok(1.0));
+///
+/// let s = r#" { "i64_or_f64": 1.0, "f64_or_string": 1.0 } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.i64_or_f64, Err(1.0));
+/// assert_eq!(a.f64_or_string, Ok(1.0));
+///
+/// let s = r#" { "i64_or_f64": 1.0, "f64_or_string": "foo" } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.i64_or_f64, Err(1.0));
+/// assert_eq!(a.f64_or_string, Err(String::from("foo")));
+///
+/// let s = r#" { "i64_or_f64": "foo", "f64_or_string": "foo" } "#;
+/// assert!(serde_json::from_str::<MyStruct>(s).is_err());
+/// ```
+pub fn deserialize_to_type_or_fallback<'de, D, T, F>(
+    deserializer: D,
+) -> Result<Result<T, F>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
+    F: Deserialize<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum DeEither<T, F> {
+        Type(T),
+        Fallback(F),
+    }
+
+    DeEither::<T, F>::deserialize(deserializer).map(|de| match de {
+        DeEither::Type(t) => Ok(t),
+        DeEither::Fallback(f) => Err(f),
+    })
+}
+
+/// Deserialize to a given type, while ignoring any invalid fields.
+///
+/// This helper function will attempt to deserialize to the given type, and if
+/// it fails it will return `None`, therefore never failing. This is different
+/// from deserializing directly to `Option<T>`, because this would return `None`
+/// only for empty fields, while it would return an error for invalid fields.
+///
+/// # Example:
+///
+/// ```rust
+/// use serde_aux::prelude::*;
+///
+/// #[derive(serde::Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "deserialize_to_type_or_none")]
+///     opt_f64: Option<f64>,
+/// }
+///
+/// let s = r#" { "opt_f64": 1 } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.opt_f64, Some(1.0));
+///
+/// let s = r#" { "opt_f64": 1.0 } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.opt_f64, Some(1.0));
+///
+/// let s = r#" { "opt_f64": "foo" } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.opt_f64, None);
+/// ```
+pub fn deserialize_to_type_or_none<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    Option<T>: Deserialize<'de>,
+{
+    Option::<T>::deserialize(deserializer).or_else(|_| Ok(None))
+}
+
+/// Deserialize to a given type, while returning invalid fields as `String`.
+///
+/// This helper function will attempt to deserialize to the given type, and if
+/// it fails it will return the invalid field lossily converted to `String`,
+/// therefore never failing.
+///
+/// # Example:
+///
+/// ```rust
+/// use serde_aux::prelude::*;
+///
+/// #[derive(serde::Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "deserialize_to_type_or_string_lossy")]
+///     f64_or_string_lossy: Result<f64, String>,
+/// }
+///
+/// let s = r#" { "f64_or_string_lossy": 1 } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.f64_or_string_lossy, Ok(1.0));
+///
+/// let s = r#" { "f64_or_string_lossy": 1.0 } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.f64_or_string_lossy, Ok(1.0));
+///
+/// let s = r#" { "f64_or_string_lossy": "foo" } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.f64_or_string_lossy, Err(String::from("foo")));
+/// ```
+pub fn deserialize_to_type_or_string_lossy<'de, D, T>(
+    deserializer: D,
+) -> Result<Result<T, String>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    let value = serde_value::Value::deserialize(deserializer)?;
+    Ok(T::deserialize(value.clone()).map_err(|_| match value {
+        serde_value::Value::Bool(b) => b.to_string(),
+        serde_value::Value::U8(u) => u.to_string(),
+        serde_value::Value::U16(u) => u.to_string(),
+        serde_value::Value::U32(u) => u.to_string(),
+        serde_value::Value::U64(u) => u.to_string(),
+        serde_value::Value::I8(i) => i.to_string(),
+        serde_value::Value::I16(i) => i.to_string(),
+        serde_value::Value::I32(i) => i.to_string(),
+        serde_value::Value::I64(i) => i.to_string(),
+        serde_value::Value::F32(f) => f.to_string(),
+        serde_value::Value::F64(f) => f.to_string(),
+        serde_value::Value::Char(c) => c.to_string(),
+        serde_value::Value::String(s) => s,
+        serde_value::Value::Unit => String::new(),
+        serde_value::Value::Option(opt) => {
+            format!("{:?}", opt)
+        }
+        serde_value::Value::Newtype(nt) => {
+            format!("{:?}", nt)
+        }
+        serde_value::Value::Seq(seq) => format!("{:?}", seq),
+        serde_value::Value::Map(map) => format!("{:?}", map),
+        serde_value::Value::Bytes(v) => String::from_utf8_lossy(&v).into_owned(),
+    }))
+}
+
 /// Create a parser quickly.
 ///
 /// ```
