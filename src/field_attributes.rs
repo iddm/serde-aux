@@ -401,6 +401,7 @@ where
     #[serde(untagged)]
     enum NumericOrNull<'a, T> {
         Str(&'a str),
+        String(String),
         FromStr(T),
         Null,
     }
@@ -409,6 +410,10 @@ where
         NumericOrNull::Str(s) => match s {
             "" => Ok(None),
             _ => T::from_str(s).map(Some).map_err(serde::de::Error::custom),
+        },
+        NumericOrNull::String(s) => match s.as_str() {
+            "" => Ok(None),
+            _ => T::from_str(&s).map(Some).map_err(serde::de::Error::custom),
         },
         NumericOrNull::FromStr(i) => Ok(Some(i)),
         NumericOrNull::Null => Ok(None),
@@ -432,12 +437,19 @@ macro_rules! wrap_option_number_from_string_fn {
             #[serde(untagged)]
             enum NumericOrNull<'a, T> {
                 Str(&'a str),
+                String(String),
                 FromStr(T),
                 Null,
             }
 
             match NumericOrNull::<T>::deserialize(deserializer)? {
                 NumericOrNull::Str(s) => match s {
+                    "" => Ok(None.into()),
+                    _ => T::from_str(s)
+                        .map(|i| Some(i).into())
+                        .map_err(serde::de::Error::custom),
+                },
+                NumericOrNull::String(s) => match s.as_str() {
                     "" => Ok(None.into()),
                     _ => T::from_str(&s)
                         .map(|i| Some(i).into())
@@ -1413,5 +1425,18 @@ mod tests {
         serde_json_err!("a");
         serde_json_err!({});
         serde_json_err!([]);
+    }
+
+    #[derive(Debug, serde::Deserialize)]
+    struct TestStruct {
+        #[serde(default, deserialize_with = "deserialize_option_number_from_string")]
+        value: Option<f32>,
+    }
+
+    #[test]
+    fn deserialize_string_variant_valid_number() {
+        let json = r#"{"value": "4\u0032.5"}"#;
+        let result: TestStruct = serde_json::from_str(json).unwrap();
+        assert_eq!(result.value, Some(42.5));
     }
 }
