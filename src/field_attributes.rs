@@ -205,15 +205,9 @@ where
 {
     use chrono::prelude::*;
 
-    let number = deserialize_number_from_string::<i64, D>(deserializer)?;
-    let seconds = number / 1000;
-    let millis = (number % 1000) as u32;
-    let nanos = millis * 1_000_000;
-
-    Ok(Utc.from_utc_datetime(
-        &NaiveDateTime::from_timestamp_opt(seconds, nanos)
-            .ok_or_else(|| D::Error::custom("Couldn't parse the timestamp"))?,
-    ))
+    let millis = deserialize_number_from_string::<i64, D>(deserializer)?;
+    DateTime::<Utc>::from_timestamp_millis(millis)
+        .ok_or_else(|| D::Error::custom("Couldn't parse the timestamp"))
 }
 
 /// Deserializes a `chrono::DateTime<Utc>` from a seconds time stamp.
@@ -247,11 +241,8 @@ where
     use chrono::prelude::*;
 
     let seconds = deserialize_number_from_string::<i64, D>(deserializer)?;
-
-    Ok(Utc.from_utc_datetime(
-        &NaiveDateTime::from_timestamp_opt(seconds, 0)
-            .ok_or_else(|| D::Error::custom("Couldn't parse the timestamp"))?,
-    ))
+    DateTime::<Utc>::from_timestamp(seconds, 0)
+        .ok_or_else(|| D::Error::custom("Couldn't parse the timestamp"))
 }
 
 /// Deserializes a number from string or a number.
