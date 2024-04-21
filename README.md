@@ -17,6 +17,7 @@ The minimal rust version the library supports:
   - Up to version `3.0.0` (excluding) - rustc `1.36`.
   - Since `3.0.0` - rustc `1.56`.
   - Since `4.3.0` - rustc `1.57`.
+  - Since `4.5.1` - rustc `1.61`.
 
 ## License
 This project is [licensed under the MIT license](https://github.com/iddm/serde-aux/blob/master/LICENSE).
