@@ -6,8 +6,8 @@ use serde::{Deserialize, Deserializer};
 /// # **Notes**
 ///
 /// - The following deserializer is incompatible with serde's one. If you wish
-/// to use `serde(rename)`, there is a high risk it won't work. Please see
-/// <https://github.com/vityafx/serde-aux/issues/8> for further information.
+///   to use `serde(rename)`, there is a high risk it won't work. Please see
+///   <https://github.com/vityafx/serde-aux/issues/8> for further information.
 ///
 /// # Example:
 ///
