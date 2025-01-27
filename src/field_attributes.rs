@@ -973,7 +973,7 @@ pub enum Pattern<'a> {
     Multiple(Vec<Pattern<'a>>),
 }
 
-impl<'a> From<char> for Pattern<'a> {
+impl From<char> for Pattern<'_> {
     fn from(c: char) -> Self {
         Pattern::Char(c)
     }
@@ -1029,7 +1029,7 @@ impl<'a> std::iter::FromIterator<Pattern<'a>> for Pattern<'a> {
     }
 }
 
-impl<'a> std::iter::FromIterator<char> for Pattern<'a> {
+impl std::iter::FromIterator<char> for Pattern<'_> {
     fn from_iter<I>(iter: I) -> Self
     where
         I: IntoIterator<Item = char>,
@@ -1047,7 +1047,7 @@ impl<'a> std::iter::FromIterator<&'a str> for Pattern<'a> {
     }
 }
 
-impl<'a, P> From<P> for Pattern<'a>
+impl<P> From<P> for Pattern<'_>
 where
     P: Fn(char) -> bool + 'static,
 {
@@ -1056,7 +1056,7 @@ where
     }
 }
 
-impl<'a, 'de, T> Default for StringOrVecToVec<'a, T, T::Err>
+impl<'de, T> Default for StringOrVecToVec<'_, T, T::Err>
 where
     T: FromStr + serde::Deserialize<'de> + 'static,
     <T as FromStr>::Err: std::fmt::Display,
@@ -1261,7 +1261,7 @@ impl<'a, T, E> StringOrVecToVec<'a, T, E> {
     }
 }
 
-impl<'a> Pattern<'a> {
+impl Pattern<'_> {
     fn split<'b>(&self, input: &'b str) -> Vec<&'b str> {
         match self {
             Pattern::Char(c) => input.split(*c).collect(),

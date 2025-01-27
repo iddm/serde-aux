@@ -40,7 +40,7 @@ where
         fields: &'a mut Option<&'static [&'static str]>,
     }
 
-    impl<'de, 'a> Deserializer<'de> for StructFieldsDeserializer<'a> {
+    impl<'de> Deserializer<'de> for StructFieldsDeserializer<'_> {
         type Error = serde::de::value::Error;
 
         fn deserialize_any<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
@@ -74,7 +74,7 @@ where
         variants: &'a mut Option<&'static [&'static str]>,
     }
 
-    impl<'de, 'a> Deserializer<'de> for EnumVariantsDeserializer<'a> {
+    impl<'de> Deserializer<'de> for EnumVariantsDeserializer<'_> {
         type Error = serde::de::value::Error;
 
         fn deserialize_any<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
