@@ -252,7 +252,7 @@ where
 /// ```rust
 /// use serde_aux::prelude::*;
 ///
-/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// #[derive(serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "deserialize_number_from_string")]
 ///     number_from_string: u64,
@@ -277,7 +277,7 @@ where
 ///
 /// use serde_aux::prelude::*;
 ///
-/// #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
+/// #[derive(serde::Deserialize, Debug, PartialEq)]
 /// struct IntId(u64);
 ///
 /// impl FromStr for IntId {
@@ -288,7 +288,7 @@ where
 ///     }
 /// }
 ///
-/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// #[derive(serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "deserialize_number_from_string")]
 ///     int_id: IntId,
@@ -305,7 +305,7 @@ where
 pub fn deserialize_number_from_string<'de, T, D>(deserializer: D) -> Result<T, D::Error>
 where
     D: Deserializer<'de>,
-    T: FromStr + serde::Deserialize<'de>,
+    T: FromStr + Deserialize<'de>,
     <T as FromStr>::Err: Display,
 {
     #[derive(Deserialize)]
@@ -328,7 +328,7 @@ where
 /// ```rust
 /// use serde_aux::prelude::*;
 ///
-/// #[derive(Debug, serde::Deserialize)]
+/// #[derive(serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "deserialize_option_number_from_string")]
 ///     option_num: Option<f32>,
@@ -385,7 +385,7 @@ pub fn deserialize_option_number_from_string<'de, T, D>(
 ) -> Result<Option<T>, D::Error>
 where
     D: Deserializer<'de>,
-    T: FromStr + serde::Deserialize<'de>,
+    T: FromStr + Deserialize<'de>,
     <T as FromStr>::Err: Display,
 {
     #[derive(Deserialize)]
@@ -421,7 +421,7 @@ macro_rules! wrap_option_number_from_string_fn {
         pub fn $func<'de, T, D>(deserializer: D) -> Result<$res, D::Error>
         where
             D: Deserializer<'de>,
-            T: FromStr + serde::Deserialize<'de>,
+            T: FromStr + Deserialize<'de>,
             <T as FromStr>::Err: Display,
         {
             #[derive(Deserialize)]
@@ -461,7 +461,7 @@ wrap_option_number_from_string_fn!(
     /// use serde_aux::prelude::*;
     /// use std::cell::Cell;
     ///
-    /// #[derive(Debug, serde::Deserialize)]
+    /// #[derive(serde::Deserialize, Debug)]
     /// struct MyStruct {
     ///     #[serde(deserialize_with = "deserialize_cell_option_number_from_string")]
     ///     v: Cell<Option<f32>>
@@ -482,7 +482,7 @@ wrap_option_number_from_string_fn!(
     /// use serde_aux::prelude::*;
     /// use std::cell::RefCell;
     ///
-    /// #[derive(Debug, serde::Deserialize)]
+    /// #[derive(serde::Deserialize, Debug)]
     /// struct MyStruct {
     ///     #[serde(default, deserialize_with = "deserialize_ref_cell_option_number_from_string")]
     ///     v: RefCell<Option<f32>>
@@ -503,7 +503,7 @@ wrap_option_number_from_string_fn!(
     /// use serde_aux::prelude::*;
     /// use std::sync::Mutex;
     ///
-    /// #[derive(Debug, serde::Deserialize)]
+    /// #[derive(serde::Deserialize, Debug)]
     /// struct MyStruct {
     ///     #[serde(default, deserialize_with = "deserialize_mutex_option_number_from_string")]
     ///     v: Mutex<Option<f32>>
@@ -524,7 +524,7 @@ wrap_option_number_from_string_fn!(
     /// use serde_aux::prelude::*;
     /// use std::sync::RwLock;
     ///
-    /// #[derive(Debug, serde::Deserialize)]
+    /// #[derive(serde::Deserialize, Debug)]
     /// struct MyStruct {
     ///     #[serde(default, deserialize_with = "deserialize_rw_lock_option_number_from_string")]
     ///     v: RwLock<Option<f32>>
@@ -546,7 +546,7 @@ wrap_option_number_from_string_fn!(
 /// ```rust
 /// use serde_aux::prelude::*;
 ///
-/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// #[derive(serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "deserialize_bool_from_anything")]
 ///     boolean: bool,
@@ -603,8 +603,6 @@ pub fn deserialize_bool_from_anything<'de, D>(deserializer: D) -> Result<bool, D
 where
     D: Deserializer<'de>,
 {
-    use std::f64::EPSILON;
-
     #[derive(Deserialize)]
     #[serde(untagged)]
     enum AnythingOrBool {
@@ -622,7 +620,7 @@ where
             _ => Err(serde::de::Error::custom("The number is neither 1 nor 0")),
         },
         AnythingOrBool::Float(f) => {
-            if (f - 1.0f64).abs() < EPSILON {
+            if (f - 1.0f64).abs() < f64::EPSILON {
                 Ok(true)
             } else if f == 0.0f64 {
                 Ok(false)
@@ -642,7 +640,7 @@ where
                     _ => Err(serde::de::Error::custom("The number is neither 1 nor 0")),
                 }
             } else if let Ok(f) = string.parse::<f64>() {
-                if (f - 1.0f64).abs() < EPSILON {
+                if (f - 1.0f64).abs() < f64::EPSILON {
                     Ok(true)
                 } else if f == 0.0f64 {
                     Ok(false)
@@ -669,7 +667,7 @@ where
 /// ```rust
 /// use serde_aux::prelude::*;
 ///
-/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// #[derive(serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "deserialize_string_from_number")]
 ///     number_as_string: String,
@@ -714,7 +712,7 @@ where
 /// ```rust
 /// use serde_aux::prelude::*;
 ///
-/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// #[derive(serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "deserialize_default_from_null")]
 ///     null_as_default: u64,
@@ -747,13 +745,13 @@ where
 /// ```rust
 /// use serde_aux::prelude::*;
 ///
-/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// #[derive(serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "deserialize_default_from_empty_object")]
 ///     empty_as_default: Option<MyInnerStruct>,
 /// }
 ///
-/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// #[derive(serde::Deserialize, Debug)]
 /// struct MyInnerStruct {
 ///     mandatory: u64,
 /// }
@@ -805,7 +803,7 @@ where
 /// ```rust
 /// use serde_aux::prelude::*;
 ///
-/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// #[derive(serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "deserialize_vec_from_string_or_vec")]
 ///     list: Vec<i32>,
@@ -821,11 +819,171 @@ where
 /// ```
 pub fn deserialize_vec_from_string_or_vec<'de, T, D>(deserializer: D) -> Result<Vec<T>, D::Error>
 where
-    D: serde::Deserializer<'de>,
-    T: FromStr + serde::Deserialize<'de> + 'static,
+    D: Deserializer<'de>,
+    T: FromStr + Deserialize<'de> + 'static,
     <T as FromStr>::Err: std::fmt::Display,
 {
     StringOrVecToVec::default().into_deserializer()(deserializer)
+}
+
+/// Deserialize to primary or fallback type.
+///
+/// This helper function will attempt to deserialize to the primary type first,
+/// and if that fails it will attempt to deserialize to the fallback type. If
+/// both fail, it will return an error.
+///
+/// # Example:
+///
+/// ```rust
+/// use serde_aux::prelude::*;
+///
+/// #[derive(serde::Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "deserialize_to_type_or_fallback")]
+///     i64_or_f64: Result<i64, f64>,
+///     #[serde(deserialize_with = "deserialize_to_type_or_fallback")]
+///     f64_or_string: Result<f64, String>,
+/// }
+///
+/// let s = r#" { "i64_or_f64": 1, "f64_or_string": 1 } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.i64_or_f64, Ok(1));
+/// assert_eq!(a.f64_or_string, Ok(1.0));
+///
+/// let s = r#" { "i64_or_f64": 1.0, "f64_or_string": 1.0 } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.i64_or_f64, Err(1.0));
+/// assert_eq!(a.f64_or_string, Ok(1.0));
+///
+/// let s = r#" { "i64_or_f64": 1.0, "f64_or_string": "foo" } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.i64_or_f64, Err(1.0));
+/// assert_eq!(a.f64_or_string, Err(String::from("foo")));
+///
+/// let s = r#" { "i64_or_f64": "foo", "f64_or_string": "foo" } "#;
+/// assert!(serde_json::from_str::<MyStruct>(s).is_err());
+/// ```
+pub fn deserialize_to_type_or_fallback<'de, D, T, F>(
+    deserializer: D,
+) -> Result<Result<T, F>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
+    F: Deserialize<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum DeEither<T, F> {
+        Type(T),
+        Fallback(F),
+    }
+
+    DeEither::<T, F>::deserialize(deserializer).map(|de| match de {
+        DeEither::Type(t) => Ok(t),
+        DeEither::Fallback(f) => Err(f),
+    })
+}
+
+/// Deserialize to a given type, while ignoring any invalid fields.
+///
+/// This helper function will attempt to deserialize to the given type, and if
+/// it fails it will return `None`, therefore never failing. This is different
+/// from deserializing directly to `Option<T>`, because this would return `None`
+/// only for empty fields, while it would return an error for invalid fields.
+///
+/// # Example:
+///
+/// ```rust
+/// use serde_aux::prelude::*;
+///
+/// #[derive(serde::Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "deserialize_to_type_or_none")]
+///     opt_f64: Option<f64>,
+/// }
+///
+/// let s = r#" { "opt_f64": 1 } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.opt_f64, Some(1.0));
+///
+/// let s = r#" { "opt_f64": 1.0 } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.opt_f64, Some(1.0));
+///
+/// let s = r#" { "opt_f64": "foo" } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.opt_f64, None);
+/// ```
+pub fn deserialize_to_type_or_none<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    Option<T>: Deserialize<'de>,
+{
+    Option::<T>::deserialize(deserializer).or_else(|_| Ok(None))
+}
+
+/// Deserialize to a given type, while returning invalid fields as `String`.
+///
+/// This helper function will attempt to deserialize to the given type, and if
+/// it fails it will return the invalid field lossily converted to `String`,
+/// therefore never failing.
+///
+/// # Example:
+///
+/// ```rust
+/// use serde_aux::prelude::*;
+///
+/// #[derive(serde::Deserialize, Debug)]
+/// struct MyStruct {
+///     #[serde(deserialize_with = "deserialize_to_type_or_string_lossy")]
+///     f64_or_string_lossy: Result<f64, String>,
+/// }
+///
+/// let s = r#" { "f64_or_string_lossy": 1 } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.f64_or_string_lossy, Ok(1.0));
+///
+/// let s = r#" { "f64_or_string_lossy": 1.0 } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.f64_or_string_lossy, Ok(1.0));
+///
+/// let s = r#" { "f64_or_string_lossy": "foo" } "#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert_eq!(a.f64_or_string_lossy, Err(String::from("foo")));
+/// ```
+pub fn deserialize_to_type_or_string_lossy<'de, D, T>(
+    deserializer: D,
+) -> Result<Result<T, String>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    let value = serde_value::Value::deserialize(deserializer)?;
+    Ok(T::deserialize(value.clone()).map_err(|_| match value {
+        serde_value::Value::Bool(b) => b.to_string(),
+        serde_value::Value::U8(u) => u.to_string(),
+        serde_value::Value::U16(u) => u.to_string(),
+        serde_value::Value::U32(u) => u.to_string(),
+        serde_value::Value::U64(u) => u.to_string(),
+        serde_value::Value::I8(i) => i.to_string(),
+        serde_value::Value::I16(i) => i.to_string(),
+        serde_value::Value::I32(i) => i.to_string(),
+        serde_value::Value::I64(i) => i.to_string(),
+        serde_value::Value::F32(f) => f.to_string(),
+        serde_value::Value::F64(f) => f.to_string(),
+        serde_value::Value::Char(c) => c.to_string(),
+        serde_value::Value::String(s) => s,
+        serde_value::Value::Unit => String::new(),
+        serde_value::Value::Option(opt) => {
+            format!("{:?}", opt)
+        }
+        serde_value::Value::Newtype(nt) => {
+            format!("{:?}", nt)
+        }
+        serde_value::Value::Seq(seq) => format!("{:?}", seq),
+        serde_value::Value::Map(map) => format!("{:?}", map),
+        serde_value::Value::Bytes(v) => String::from_utf8_lossy(&v).into_owned(),
+    }))
 }
 
 /// Create a parser quickly.
@@ -836,7 +994,7 @@ where
 ///
 /// serde_aux::StringOrVecToVecParser!(parse_between_commas, |c| { c == ',' }, true);
 ///
-/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// #[derive(serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "parse_between_commas")]
 ///     list: Vec<i32>,
@@ -853,7 +1011,7 @@ where
 ///
 /// serde_aux::StringOrVecToVecParser!(u8, parse_hex_with_spaces, ' ', |s| { u8::from_str_radix(s, 16) }, true);
 ///
-/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// #[derive(serde::Deserialize, Debug)]
 /// struct MyStructHex {
 ///     #[serde(deserialize_with = "parse_hex_with_spaces")]
 ///     list: Vec<u8>,
@@ -910,7 +1068,7 @@ macro_rules! StringOrVecToVecParser {
 ///     StringOrVecToVec::default().into_deserializer()(deserializer)
 /// }
 ///
-/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// #[derive(serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "parser")]
 ///     list: Vec<i32>,
@@ -958,7 +1116,7 @@ pub enum Pattern<'a> {
     ///     StringOrVecToVec::with_separator(vec![Pattern::Char('+'), Pattern::Char('-')]).into_deserializer()(deserializer)
     /// }
     ///
-    /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+    /// #[derive(serde::Deserialize, Debug)]
     /// struct MyStruct {
     ///     #[serde(deserialize_with = "parser")]
     ///     list: Vec<i32>,
@@ -975,7 +1133,7 @@ pub enum Pattern<'a> {
     Multiple(Vec<Pattern<'a>>),
 }
 
-impl<'a> From<char> for Pattern<'a> {
+impl From<char> for Pattern<'_> {
     fn from(c: char) -> Self {
         Pattern::Char(c)
     }
@@ -1008,7 +1166,7 @@ impl<'a> From<Vec<Pattern<'a>>> for Pattern<'a> {
 ///     StringOrVecToVec::with_separator(vec!['-', '+'].into_iter().collect::<Pattern>()).into_deserializer()(deserializer)
 /// }
 ///
-/// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+/// #[derive(serde::Deserialize, Debug)]
 /// struct MyStruct {
 ///     #[serde(deserialize_with = "parser")]
 ///     list: Vec<i32>,
@@ -1031,7 +1189,7 @@ impl<'a> std::iter::FromIterator<Pattern<'a>> for Pattern<'a> {
     }
 }
 
-impl<'a> std::iter::FromIterator<char> for Pattern<'a> {
+impl std::iter::FromIterator<char> for Pattern<'_> {
     fn from_iter<I>(iter: I) -> Self
     where
         I: IntoIterator<Item = char>,
@@ -1049,7 +1207,7 @@ impl<'a> std::iter::FromIterator<&'a str> for Pattern<'a> {
     }
 }
 
-impl<'a, P> From<P> for Pattern<'a>
+impl<P> From<P> for Pattern<'_>
 where
     P: Fn(char) -> bool + 'static,
 {
@@ -1058,9 +1216,9 @@ where
     }
 }
 
-impl<'a, 'de, T> Default for StringOrVecToVec<'a, T, T::Err>
+impl<'de, T> Default for StringOrVecToVec<'_, T, T::Err>
 where
-    T: FromStr + serde::Deserialize<'de> + 'static,
+    T: FromStr + Deserialize<'de> + 'static,
     <T as FromStr>::Err: std::fmt::Display,
 {
     fn default() -> Self {
@@ -1070,7 +1228,7 @@ where
 
 impl<'a, 'de, T> StringOrVecToVec<'a, T, T::Err>
 where
-    T: FromStr + serde::Deserialize<'de> + 'static,
+    T: FromStr + Deserialize<'de> + 'static,
     <T as FromStr>::Err: std::fmt::Display,
 {
     /// Create a `StringOrVecToVec` builder with a custom separator. `T::from_str` is used to parse
@@ -1091,7 +1249,7 @@ where
     ///     StringOrVecToVec::with_separator(|c| c == '-' || c == '+').into_deserializer()(deserializer)
     /// }
     ///
-    /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+    /// #[derive(serde::Deserialize, Debug)]
     /// struct MyStruct {
     ///     #[serde(deserialize_with = "parser")]
     ///     list: Vec<i32>,
@@ -1126,7 +1284,7 @@ where
     ///     parser.into_deserializer()(deserializer)
     /// }
     ///
-    /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+    /// #[derive(serde::Deserialize, Debug)]
     /// struct MyStructSkipEmpty {
     ///     #[serde(deserialize_with = "parser_skip_empty")]
     ///     list: Vec<i32>,
@@ -1160,7 +1318,7 @@ impl<'a, T, E> StringOrVecToVec<'a, T, E> {
     ///     StringOrVecToVec::new('-', |s| s.trim().parse(), false).into_deserializer()(deserializer)
     /// }
     ///
-    /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+    /// #[derive(serde::Deserialize, Debug)]
     /// struct MyStruct {
     ///     #[serde(deserialize_with = "parser")]
     ///     list: Vec<i32>,
@@ -1204,7 +1362,7 @@ impl<'a, T, E> StringOrVecToVec<'a, T, E> {
     ///     StringOrVecToVec::with_parser(|s| s.trim().parse()).into_deserializer()(deserializer)
     /// }
     ///
-    /// #[derive(serde::Serialize, serde::Deserialize, Debug)]
+    /// #[derive(serde::Deserialize, Debug)]
     /// struct MyStruct {
     ///     #[serde(deserialize_with = "parser")]
     ///     list: Vec<i32>,
@@ -1225,11 +1383,11 @@ impl<'a, T, E> StringOrVecToVec<'a, T, E> {
     /// Creates the actual deserializer from this builder.
     pub fn into_deserializer<'de, D>(
         self,
-    ) -> impl FnMut(D) -> Result<Vec<T>, <D as serde::Deserializer<'de>>::Error>
+    ) -> impl FnMut(D) -> Result<Vec<T>, <D as Deserializer<'de>>::Error>
     where
         'a: 'de,
-        D: serde::Deserializer<'de>,
-        T: serde::Deserialize<'de>,
+        D: Deserializer<'de>,
+        T: Deserialize<'de>,
         E: std::fmt::Display,
     {
         #[derive(Deserialize)]
@@ -1263,7 +1421,7 @@ impl<'a, T, E> StringOrVecToVec<'a, T, E> {
     }
 }
 
-impl<'a> Pattern<'a> {
+impl Pattern<'_> {
     fn split<'b>(&self, input: &'b str) -> Vec<&'b str> {
         match self {
             Pattern::Char(c) => input.split(*c).collect(),
