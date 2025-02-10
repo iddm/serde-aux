@@ -1,6 +1,6 @@
 [package]
 name = "serde-aux"
-version = "4.5.1"
+version = "4.6.0"
 authors = ["Victor Polevoy <maintainer@vpolevoy.com>"]
 description = "A serde crate's auxiliary library"
 readme = "README.md"
