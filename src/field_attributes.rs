@@ -593,6 +593,22 @@ wrap_option_number_from_string_fn!(
 /// let a: MyStruct = serde_json::from_str(s).unwrap();
 /// assert!(!a.boolean);
 ///
+/// let s = r#"{ "boolean": "TRUE" }"#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert!(a.boolean);
+///
+/// let s = r#"{ "boolean": "FALSE" }"#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert!(!a.boolean);
+///
+/// let s = r#"{ "boolean": "true" }"#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert!(a.boolean);
+///
+/// let s = r#"{ "boolean": "false" }"#;
+/// let a: MyStruct = serde_json::from_str(s).unwrap();
+/// assert!(!a.boolean);
+///
 /// let s = r#"{ "boolean": "2" }"#;
 /// assert!(serde_json::from_str::<MyStruct>(s).is_err());
 ///
@@ -631,7 +647,7 @@ where
             }
         }
         AnythingOrBool::String(string) => {
-            if let Ok(b) = string.parse::<bool>() {
+            if let Ok(b) = string.to_lowercase().parse::<bool>() {
                 Ok(b)
             } else if let Ok(i) = string.parse::<i64>() {
                 match i {
