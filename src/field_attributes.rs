@@ -601,7 +601,7 @@ wrap_option_number_from_string_fn!(
 /// let a: MyStruct = serde_json::from_str(s).unwrap();
 /// assert!(!a.boolean);
 ///
-/// /// let s = r#"{ "boolean": "TruE" }"#;
+/// let s = r#"{ "boolean": "TruE" }"#;
 /// let a: MyStruct = serde_json::from_str(s).unwrap();
 /// assert!(a.boolean);
 ///
